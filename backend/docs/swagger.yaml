@@ -1,0 +1,11 @@
+basePath: /api/v1
+info:
+  contact:
+    email: sklyarvladislavtl@gmail.com
+    name: API Support
+  description: Swagger API for Golang Project SelfDev.
+  termsOfService: http://swagger.io/terms/
+  title: SelfDev Swagger API
+  version: "1.0"
+paths: {}
+swagger: "2.0"
