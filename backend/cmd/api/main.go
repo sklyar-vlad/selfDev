@@ -10,15 +10,6 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-//	@title			SelfDev Swagger API
-//	@version		1.0
-//	@description	Swagger API for Golang Project SelfDev.
-//	@termsOfService	http://swagger.io/terms/
-
-//	@contact.name	API Support
-//	@contact.email	sklyarvladislavtl@gmail.com
-
-// @BasePath	/api/v1
 func main() {
 	mux := http.NewServeMux()
 	habitHandler := &handler.HabitHandler{}
