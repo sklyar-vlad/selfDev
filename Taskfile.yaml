@@ -12,13 +12,13 @@ tasks:
     cmds:
       - cd frontend && docker build -t self-dev-frontend .
 
-  run:
+  up:
     desc: start service
     cmds:
       - docker-compose up -d
     silent: true
 
-  stop:
+  down:
     desc: stop service
     cmds:
       - docker-compose down
@@ -28,4 +28,21 @@ tasks:
     desc: formatting project
     cmds:
       - golangci-lint fmt
-    silent: true      
+    silent: true
+
+  migration:
+    desc: create new migration file
+    cmds:
+      - goose -s create {{.NAME}} sql -dir ./backend/migrations
+    vars:
+      NAME: "{{.NAME | default \"migration\"}}"
+  
+  migrate:
+    desc: choose last version of migrations
+    cmds:
+      - goose up
+  
+  rollback:
+    desc: comeback to previous version of migrations
+    cmds:
+      - goose down
