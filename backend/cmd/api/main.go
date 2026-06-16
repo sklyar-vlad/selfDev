@@ -4,22 +4,22 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	_ "github.com/sklyar-vlad/tracker/backend/docs"
-	"github.com/sklyar-vlad/tracker/backend/internal/handler"
-	httpSwagger "github.com/swaggo/http-swagger"
+	"fmt"
 )
+
+func habitHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Hello from /habit")
+}
+
 
 func main() {
 	mux := http.NewServeMux()
-	habitHandler := &handler.HabitHandler{}
-	mux.Handle("/habit", habitHandler)
-	mux.Handle("/swagger/", httpSwagger.WrapHandler)
+	mux.HandleFunc("/habit", habitHandler)
 
 	service := &http.Server{
 		Addr:         ":8080",
 		Handler:      mux,
-		ReadTimeout:  5 * time.Second,
+		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}

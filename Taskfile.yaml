@@ -10,6 +10,7 @@ tasks:
   run:
     desc: start service
     cmds:
+      - task build
       - docker run --rm -d --name=self-dev-backend --network=self-dev -p=8080:8080 self-dev:latest
     silent: true
 
