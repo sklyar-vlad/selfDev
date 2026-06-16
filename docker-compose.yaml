@@ -37,6 +37,7 @@ volumes:
 
 networks:
   self-dev:
+    name: "self-dev-network"
     driver: bridge
     ipam:
       config:
