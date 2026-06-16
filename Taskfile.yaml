@@ -33,7 +33,7 @@ tasks:
   migration:
     desc: create new migration file
     cmds:
-      - goose -s create {{.NAME}} sql -dir ./backend/migrations
+      - goose -s create {{.NAME}} sql
     vars:
       NAME: "{{.NAME | default \"migration\"}}"
   

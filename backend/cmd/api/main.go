@@ -1,19 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/sklyar-vlad/tracker/internal/handler"
 )
 
-func habitHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Hello from /habit")
-}
 
 func main() {
+	
+
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/habit", habitHandler)
+	handler.RegisterRoutes(mux, userH)
 
 	service := &http.Server{
 		Addr:         ":8080",
