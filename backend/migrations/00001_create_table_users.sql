@@ -7,7 +7,7 @@ CREATE TABLE users (
     username VARCHAR(30),
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- +goose Down
