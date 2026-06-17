@@ -17,7 +17,7 @@ type Service interface {
 
 type handler struct {
 	service Service
-	logger *zap.Logger
+	logger  *zap.Logger
 }
 
 func NewHandler(service Service, logger *zap.Logger) *handler {
@@ -30,7 +30,7 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		h.logger.Error("decode request failed", zap.Error(err))
 		http.Error(w, "invalid json", http.StatusBadRequest)
-		return 
+		return
 	}
 
 	if input.Email == "" {
@@ -46,7 +46,6 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := h.service.Register(r.Context(), input.Username, input.Email, input.Password)
-
 	if err != nil {
 		h.logger.Error("failed create user", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -55,7 +54,6 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
 
 	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(user)); err != nil {
 		h.logger.Error("failed create response with user model", zap.String("email", user.Email), zap.Error(err))

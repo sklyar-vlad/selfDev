@@ -22,12 +22,13 @@ import (
 
 func main() {
 	logger, err := logger.NewLogger()
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync()
+	}()
 
 	if err := godotenv.Load(); err != nil {
 		logger.Fatal("invalid load .env file:", zap.Error(err))
@@ -35,7 +36,6 @@ func main() {
 
 	ctx := context.Background()
 	pool, err := database.NewPostgres(ctx, os.Getenv("DATABASE_URL"))
-
 	if err != nil {
 		logger.Fatal("invalid connect with database", zap.Error(err))
 	}
@@ -65,15 +65,15 @@ func main() {
 			logger.Fatal("server failed", zap.Error(err))
 		}
 	}()
-	
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	<-stop 
+	<-stop
 
 	logger.Info("shutdown signal received...")
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := service.Shutdown(ctxShutdown); err != nil {
 		logger.Error("graceful shutdown failed", zap.Error(err))
 	} else {

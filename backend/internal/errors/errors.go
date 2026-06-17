@@ -3,6 +3,6 @@ package errors
 import "errors"
 
 var (
-	ErrInvalidEmail  = errors.New("invalid email")
+	ErrInvalidEmail    = errors.New("invalid email")
 	ErrInvalidPassword = errors.New("invalid password")
 )

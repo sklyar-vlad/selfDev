@@ -2,22 +2,16 @@
   <div class="main-layout">
     <Header />
   </div>
-  
+
   <section class="hero">
     <div class="hero-content">
       <h1>Track everything that matters</h1>
-      <p>
-        Simple, fast and clean tracker for your habits, tasks and goals.
-      </p>
+      <p>Simple, fast and clean tracker for your habits, tasks and goals.</p>
 
       <div class="hero-actions">
-        <RouterLink to="/register" class="btn btn-primary">
-          Get Started
-        </RouterLink>
+        <RouterLink to="/register" class="btn btn-primary"> Get Started </RouterLink>
 
-        <RouterLink to="/login" class="btn btn-secondary">
-          Sign In
-        </RouterLink>
+        <RouterLink to="/login" class="btn btn-secondary"> Sign In </RouterLink>
       </div>
     </div>
 
@@ -30,7 +24,6 @@ import Header from '@/components/HeaderAuth.vue'
 </script>
 
 <style scoped>
-
 .hero {
   min-height: 80vh;
   display: flex;
@@ -73,7 +66,6 @@ import Header from '@/components/HeaderAuth.vue'
   gap: 16px;
 }
 
-
 /* buttons — ты уже используешь эти классы */
 .btn {
   padding: 12px 24px;
@@ -87,11 +79,7 @@ import Header from '@/components/HeaderAuth.vue'
 }
 
 .btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--accent-primary),
-    var(--accent-primary-dark)
-  );
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-dark));
   color: white;
 }
 

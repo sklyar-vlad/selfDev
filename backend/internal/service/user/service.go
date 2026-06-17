@@ -14,7 +14,7 @@ type Repository interface {
 }
 
 type Service struct {
-	repo Repository
+	repo   Repository
 	logger *zap.Logger
 }
 
@@ -24,14 +24,12 @@ func NewService(repo Repository, logger *zap.Logger) *Service {
 
 func (s *Service) Register(ctx context.Context, username, email, password string) (model.User, error) {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-
 	if err != nil {
 		s.logger.Error("password hash generation failed", zap.String("email", email), zap.Error(err))
 		return model.User{}, errors.New("invalid generate hash of password")
 	}
 
 	user, err := model.NewUser(username, email, string(passwordHash))
-
 	if err != nil {
 		s.logger.Error("create model user failed", zap.String("email", email), zap.Error(err))
 		return model.User{}, errors.New("invalid create user")
