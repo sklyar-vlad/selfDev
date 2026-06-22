@@ -12,6 +12,6 @@ type UserHandler interface {
 
 func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler) {
 	mux.HandleFunc("POST /api/register", userHandler.Register)
-	mux.HandleFunc("GET /api/login", userHandler.Login)
+	mux.HandleFunc("POST /api/login", userHandler.Login)
 	mux.HandleFunc("GET /api/refresh", userHandler.Refresh)
 }
