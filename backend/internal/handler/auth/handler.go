@@ -1,68 +1,56 @@
 package user
 
 import (
-	// "context"
-	// "encoding/json"
-	// "net/http"
+	"context"
+	"encoding/json"
+	"net/http"
 
 	"go.uber.org/zap"
-	// "github.com/sklyar-vlad/selfDev/internal/errors"
-	// "github.com/sklyar-vlad/selfDev/internal/handler/user/dto"
-	// "github.com/sklyar-vlad/selfDev/internal/model/user"
+
+	// appErrors "github.com/sklyar-vlad/selfDev/internal/errors"
+	"github.com/sklyar-vlad/selfDev/internal/handler/auth/dto"
+	model "github.com/sklyar-vlad/selfDev/internal/model/auth"
 )
 
-// login
-// refresh
-type Service interface {
-	// Register(ctx context.Context, username, email, password string) (model.User, error)
-	// Login(ctx context.Context, username, email, password string) (string, string, error)
+type AuthService interface {
+	Register(ctx context.Context, username, email, password string) (model.Tokens, error)
+	// Login(ctx context.Context, login, password string) (string, string, error)
+	// Logout(ctx context.Context, refreshToken string) error
 	// Refresh(ctx context.Context, accessToken, refreshToken string) (string, error)
 }
 
 type handler struct {
-	service Service
+	service AuthService
 	logger  *zap.Logger
 }
 
-func NewHandler(service Service, logger *zap.Logger) *handler {
+func NewHandler(service AuthService, logger *zap.Logger) *handler {
 	return &handler{service: service, logger: logger}
 }
 
-// func (h *handler) (w http.ResponseWriter, r *http.Request) {
-// 	var input dto.UserRequest
+func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
+	var input dto.AuthRequest
 
-// 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-// 		h.logger.Error("decode request failed", zap.Error(err))
-// 		http.Error(w, "invalid json", http.StatusBadRequest)
-// 		return
-// 	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		h.logger.Error("failed decode request", zap.Error(err))
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
 
-// 	if input.Email == "" {
-// 		h.logger.Error("invalid email address", zap.Error(errors.ErrInvalidEmail))
-// 		http.Error(w, errors.ErrInvalidEmail.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
+	tokens, err := h.service.Register(r.Context(), input.Username, input.Email, input.Password)
+	if err != nil {
+		h.logger.Error("failed create user", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-// 	if len(input.Password) < 6 {
-// 		h.logger.Error("invalid password, it should be more than 6 symbols", zap.Error(errors.ErrInvalidPassword))
-// 		http.Error(w, errors.ErrInvalidPassword.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 
-// 	user, err := h.service.Register(r.Context(), input.Username, input.Email, input.Password)
-// 	if err != nil {
-// 		h.logger.Error("failed create user", zap.Error(err))
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusCreated)
-
-// 	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(user)); err != nil {
-// 		h.logger.Error("failed create response with user model", zap.String("email", user.Email), zap.Error(err))
-// 	}
-// }
+	if err = json.NewEncoder(w).Encode(dto.ToTokenResponse(tokens.AccessToken, tokens.RefreshToken)); err != nil {
+		h.logger.Error("failed create response with tokens", zap.String("email", input.Email), zap.Error(err))
+	}
+}
 
 // func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 // 	var input dto.UserRequest
