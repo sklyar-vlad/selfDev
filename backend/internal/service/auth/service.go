@@ -38,6 +38,7 @@ func NewService(repo Repository, userService UserService, config config.ConfigJW
 
 func (s *Service) Register(ctx context.Context, username, email, password string) (authModel.Tokens, error) {
 	user, err := s.userService.CreateUser(ctx, username, email, password)
+	s.logger.Info("User", zap.String("user: ", user.UserId.String()))
 	if err != nil {
 		s.logger.Error("failed create user", zap.Error(err))
 		return authModel.Tokens{}, fmt.Errorf("failed create user: %v", err)
@@ -50,10 +51,10 @@ func (s *Service) Register(ctx context.Context, username, email, password string
 	}
 
 	accessTokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, authModel.NewClaims(user.UserId)).
-		SignedString(s.cfg.Secret)
+		SignedString([]byte(s.cfg.Secret))
 	if err != nil {
 		s.logger.Error("failed signed token", zap.Error(err))
-		return authModel.Tokens{}, fmt.Errorf("failed create jwt: %v", err)
+		return authModel.Tokens{}, fmt.Errorf("failed signed token: %v", err)
 	}
 
 	var tokens authModel.Tokens
@@ -62,13 +63,14 @@ func (s *Service) Register(ctx context.Context, username, email, password string
 	tokens.ExpiresAt = time.Now().AddDate(0, 1, 0)
 	tokens.UserId = user.UserId
 
+	s.logger.Info("Token", zap.String("token userId: ", user.UserId.String()))
 	err = s.repo.CreateRefreshToken(ctx, tokens)
 	if err != nil {
 		s.logger.Error("failed create refresh token", zap.Error(err))
 		return authModel.Tokens{}, fmt.Errorf("failed create refresh token: %v", err)
 	}
 
-	s.logger.Info("success login", zap.String("email", user.Email))
+	s.logger.Info("success registered", zap.String("email", user.Email))
 	return tokens, nil
 }
 
