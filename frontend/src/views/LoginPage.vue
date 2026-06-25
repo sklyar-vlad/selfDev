@@ -11,12 +11,15 @@
 
       <form @submit.prevent="handleLogin" class="auth-form">
         <div class="form-group">
-          <input id="email" v-model="email" type="text" required />
+          <input id="email" v-model="email" type="text" :class="{ 'input-error': emailError }"/>
           <label for="email">Login</label>
+          <div v-if="emailError" class="field-error">
+            {{ emailError }}
+          </div>
         </div>
 
         <div class="form-group">
-          <input id="password" v-model="password" type="password" required />
+          <input id="password" v-model="password" type="password" :class="{ 'input-error': passwordError }"/>
           <label for="password">Password</label>
         </div>
 
@@ -35,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import WelcomeHeader from '@/components/Header/WelcomeHeader.vue'
@@ -47,6 +50,30 @@ const toast = useToast()
 const email = ref('')
 const password = ref('')
 
+const emailError = computed(() => {
+  if (!email.value) return ''
+
+  const isEmail = email.value.includes('@')
+
+  if (isEmail) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    return regex.test(email.value)
+      ? ''
+      : 'Invalid email address'
+  }
+
+  return ''
+})
+
+const passwordError = computed(() => {
+  if (!password.value) return ''
+
+  return password.value.length < 6
+    ? 'Password must be at least 6 characters'
+    : ''
+})
+
 onMounted(() => {
   if (route.query.registered === 'true') {
     toast.success('Login successfully!')
@@ -54,6 +81,27 @@ onMounted(() => {
 })
 
 const handleLogin = async () => {
+
+  if (!email.value) {
+    toast.error('Login is required')
+    return
+  }
+
+  if (!password.value) {
+    toast.error('Password is required')
+    return
+  }
+
+  if (emailError.value) {
+    toast.error(emailError.value)
+    return
+  }
+
+  if (passwordError.value) {
+    toast.error(passwordError.value)
+    return
+  }
+
   try {
     const isEmail = email.value.includes('@')
 
