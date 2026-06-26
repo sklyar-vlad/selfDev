@@ -26,12 +26,12 @@ tasks:
     cmds:
       - task build-backend
       - task build-frontend
-      - docker-compose -f ./infra/docker-compose.yaml up -d
+      - docker compose -f ./infra/docker-compose.yaml up -d
 
   down:
     desc: stop service
     cmds:
-      - docker-compose -f ./infra/docker-compose.yaml down
+      - docker compose -f ./infra/docker-compose.yaml down
 
   lint:
     desc: formatting project
