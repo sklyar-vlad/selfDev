@@ -9,7 +9,7 @@ type AuthHandler interface {
 	// Logout(w http.ResponseWriter, r *http.Request)
 	Register(w http.ResponseWriter, r *http.Request)
 	ConfirmEmail(w http.ResponseWriter, r *http.Request)
-	// Refresh(w http.ResponseWriter, r *http.Request)
+	Refresh(w http.ResponseWriter, r *http.Request)
 }
 
 type UserHandler interface {
@@ -33,5 +33,5 @@ func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler, authHandler Aut
 	// mux.HandleFunc("POST /api/logout", authHandler.Logout)
 	mux.HandleFunc("POST /api/register", authHandler.Register)
 	mux.HandleFunc("POST /api/verify/{token}", authHandler.ConfirmEmail)
-	// mux.HandleFunc("POST /api/refresh", authHandler.Refresh)
+	mux.HandleFunc("POST /api/refresh", authHandler.Refresh)
 }

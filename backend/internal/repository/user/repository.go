@@ -76,7 +76,6 @@ func (r *repository) Update(ctx context.Context, user model.User) error {
 		user.EmailVerified,
 		user.Password,
 	)
-
 	if err != nil {
 		r.logger.Error("failed update user in database", zap.Error(err))
 		return fmt.Errorf("failed update user in database: %v", err)
