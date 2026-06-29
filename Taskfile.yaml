@@ -21,8 +21,8 @@ tasks:
   dev-build:
     desc: build backend and frontend for develope
     cmds:
-      - task build dev-build-backend
-      - task build dev-build-frontend
+      - task dev-build-backend
+      - task dev-build-frontend
 
 ### BUILD PROD
 
@@ -39,8 +39,8 @@ tasks:
   prod-build:
     desc: build backend and frontend for production
     cmds:
-      - task build prod-build-backend
-      - task build prod-build-frontend
+      - task prod-build-backend
+      - task prod-build-frontend
 
 ### COMPOSE (DEV)
 
