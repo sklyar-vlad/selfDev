@@ -15,7 +15,6 @@
 
         <div class="hero-actions">
           <RouterLink to="/register" class="btn btn-primary">Create account</RouterLink>
-          <RouterLink to="/login" class="btn btn-secondary">Log in</RouterLink>
         </div>
       </div>
 
@@ -108,7 +107,6 @@
 
         <div class="hero-actions">
           <RouterLink to="/register" class="btn btn-primary">Create account</RouterLink>
-          <RouterLink to="/login" class="btn btn-secondary">Log in</RouterLink>
         </div>
       </div>
     </section>
@@ -230,7 +228,7 @@ const faqs = [
 ========================= */
 .landing-page {
   width: 100%;
-  padding-bottom: 40px;
+  padding-bottom: 20px;
 }
 
 /* =========================
@@ -245,7 +243,8 @@ const faqs = [
 }
 
 .content-section {
-  padding: 44px 0 0;
+  padding: 28px 0 0;
+  scroll-margin-top: 96px;
 }
 
 .section-head {
@@ -265,7 +264,7 @@ const faqs = [
 
 .section-head h2,
 .cta-card h2 {
-  font-size: clamp(24px, 3vw, 38px);
+  font-size: clamp(28px, 3.4vw, 44px);
   line-height: 1.1;
   color: var(--text-primary);
 }
@@ -293,7 +292,7 @@ const faqs = [
   grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
   gap: 24px;
   align-items: center;
-  padding: 132px 0 24px;
+  padding: 92px 0 12px;
   overflow: hidden;
 }
 
@@ -494,7 +493,7 @@ const faqs = [
 @media (max-width: 1024px) {
   .hero {
     grid-template-columns: 1fr;
-    padding-top: 112px;
+    padding-top: 84px;
   }
 
   .feature-grid,
