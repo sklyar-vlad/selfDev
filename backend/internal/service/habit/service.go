@@ -2,6 +2,7 @@ package habit
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -11,7 +12,8 @@ import (
 )
 
 type HabitRepository interface {
-	GetAllHabits(ctx context.Context, userId uuid.UUID) (model.Habit, error)
+	GetAllHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error)
+	CreateHabit(ctx context.Context, habit model.Habit) error
 }
 
 type UserService interface {
@@ -33,5 +35,33 @@ func NewService(repo HabitRepository, userService UserService, logger *zap.Logge
 }
 
 func (s *service) GetHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error) {
-	return nil, nil
+	habits, err := s.repo.GetAllHabits(ctx, userId)
+
+	if err != nil {
+		s.logger.Error("failed get habits by user_id", zap.Error(err))
+		return []model.Habit{}, fmt.Errorf("failed get habits by user_id: %v", err)
+	}
+
+	return habits, nil
 }
+
+func (s *service) CreateHabit(
+	ctx context.Context,
+	userId uuid.UUID,
+	name, description string,
+	isGood bool,
+) (model.Habit, error) {
+	habit, err := model.NewHabit(userId, name, description, isGood)
+	if err != nil {
+		s.logger.Error("failed create model habit", zap.Error(err))
+		return model.Habit{}, fmt.Errorf("failed create model habit: %v", err)
+	}
+
+	if err = s.repo.CreateHabit(ctx, habit); err != nil {
+		s.logger.Error("failed insert habit in database", zap.Error(err))
+		return model.Habit{}, fmt.Errorf("failed insert habit in database: %v", err)
+	}
+
+	return habit, nil
+}
+

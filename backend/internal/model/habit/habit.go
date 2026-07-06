@@ -7,9 +7,9 @@ type Habit struct {
 	UserId      uuid.UUID
 	Name        string
 	Description string
-	Category    string
+	IsGood      bool
 }
 
-func NewHabit(userId uuid.UUID, name, description, category string) (Habit, error) {
-	return Habit{uuid.New(), userId, name, description, category}, nil
+func NewHabit(userId uuid.UUID, name, description string, isGood bool) (Habit, error) {
+	return Habit{uuid.New(), userId, name, description, isGood}, nil
 }

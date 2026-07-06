@@ -13,8 +13,8 @@ import (
 )
 
 type HabitService interface {
-	// GetHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error)
-	CreateHabit(ctx context.Context, userId uuid.UUID, name, description, category string) (model.Habit, error)
+	GetHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error)
+	CreateHabit(ctx context.Context, userId uuid.UUID, name, description string, isGood bool) (model.Habit, error)
 }
 
 type handler struct {
@@ -29,28 +29,32 @@ func NewHandler(service HabitService, logger *zap.Logger) *handler {
 	}
 }
 
-// func (h *handler) GetHabits(w http.ResponseWriter, r *http.Request) {
-// 	return
-// }
+func (h *handler) GetHabits(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("user_id")
+	userId, err := uuid.Parse(id)
 
-// func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
-// 	var input dto.AuthRequest
+	if err != nil {
+		h.logger.Error("invalid user_id", zap.Error(err))
+		http.Error(w, "invalid user_id", http.StatusBadRequest)
+		return
+	}
 
-// 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-// 		h.logger.Error("failed decode request", zap.Error(err))
-// 		http.Error(w, "invalid json", http.StatusBadRequest)
-// 		return
-// 	}
+	habits, err := h.service.GetHabits(r.Context(), userId)
 
-// 	if err := h.service.Register(r.Context(), input.Username, input.Email, input.Password); err != nil {
-// 		h.logger.Error("failed create user", zap.Error(err))
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
+	if err != nil {
+		h.logger.Error("failed get habits", zap.Error(err))
+		http.Error(w, "failed get habits", http.StatusInternalServerError)
+	}
 
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusCreated)
-// }
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	if err = json.NewEncoder(w).Encode(dto.ToHabitsResponse(habits)); err != nil {
+		h.logger.Error("failed create response with habits", zap.String("user_id", userId.String()))
+
+	}
+}
 
 func (h *handler) CreateHabit(w http.ResponseWriter, r *http.Request) {
 	var input dto.HabitRequest
@@ -61,14 +65,20 @@ func (h *handler) CreateHabit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	habit, err := h.service.CreateHabit(r.Context(), input.UserId, input.Name, input.Description, input.Category)
-
+	habit, err := h.service.CreateHabit(r.Context(), input.UserId, input.Name, input.Description, input.IsGood)
 	if err != nil {
 		h.logger.Error("failed create habit", zap.Error(err))
 		http.Error(w, "failed create habit", http.StatusInternalServerError)
 	}
 
 	if err = json.NewEncoder(w).Encode(dto.ToHabitResponse(habit)); err != nil {
-		h.logger.Error("failed create response with habit", zap.String("habit_id", habit.HabitId.String()), zap.Error(err))
+		h.logger.Error(
+			"failed create response with habit",
+			zap.String("habit_id", habit.HabitId.String()),
+			zap.Error(err),
+		)
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 }

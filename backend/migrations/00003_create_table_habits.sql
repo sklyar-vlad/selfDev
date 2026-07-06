@@ -4,8 +4,8 @@ CREATE TABLE habits (
     user_id UUID NOT NULL REFERENCES users(user_id),
     name VARCHAR(20),
     description VARCHAR(50),
-    type VARCHAR(5),
-    created_at TIMESTAMP
+    is_good BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE habits_completed (
