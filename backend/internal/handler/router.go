@@ -20,7 +20,15 @@ type UserHandler interface {
 	// UpdateUser(w http.ResponseWriter, r *http.Request)
 }
 
-func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler, authHandler AuthHandler) {
+type HabitHandler interface {
+	GetHabits(w http.ResponseWriter, r *http.Request)
+	// CreateHabit(w http.ResponseWriter, r *http.Request)
+	// GetHabit(w http.ResponseWriter, r *http.Request)
+	// DeleteHabit(w http.ResponseWriter, r *http.Request)
+	// UpdateHabit(w http.ResponseWriter, r *http.Request)
+}
+
+func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler, authHandler AuthHandler, habitHandler HabitHandler) {
 	// User
 	mux.HandleFunc("POST /api/users", userHandler.CreateUser)
 	// mux.HandleFunc("GET /api/users", userHandler.GetUsers)
@@ -34,4 +42,11 @@ func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler, authHandler Aut
 	mux.HandleFunc("POST /api/register", authHandler.Register)
 	mux.HandleFunc("POST /api/verify/{token}", authHandler.ConfirmEmail)
 	mux.HandleFunc("POST /api/refresh", authHandler.Refresh)
+
+	// Habit
+	// mux.HandleFunc("POST /api/habit", habitHandler.CreateHabit)
+	mux.HandleFunc("GET /api/habit", habitHandler.GetHabits)
+	// mux.HandleFunc("GET /api/habit/{id}", habitHandler.GetHabit)
+	// mux.HandleFunc("PATCH /api/habit/{id}", habitHandler.UpdateHabit)
+	// mux.HandleFunc("DELETE /api/habit/{id}", habitHandler.DeleteHabit)
 }
