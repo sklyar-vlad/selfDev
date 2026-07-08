@@ -157,6 +157,33 @@ func (s *Service) Login(ctx context.Context, username, email, password string) (
 	return refreshToken, accessToken, nil
 }
 
+func (s *Service) GetCurrentUser(ctx context.Context, accessToken string) (userModel.User, error) {
+	token, err := jwt.ParseWithClaims(
+		accessToken,
+		&authModel.Claims{},
+		func(t *jwt.Token) (interface{}, error) {
+			return []byte(s.cfg.Secret), nil
+		},
+	)
+	if err != nil {
+		s.logger.Error("invalid access token", zap.Error(err))
+		return userModel.User{}, err
+	}
+
+	claims, ok := token.Claims.(*authModel.Claims)
+	if !ok || !token.Valid {
+		return userModel.User{}, errors.New("invalid token")
+	}
+
+	user, err := s.userService.GetById(ctx, claims.UserId)
+	if err != nil {
+		s.logger.Error("failed get current user", zap.String("user_id", claims.UserId.String()), zap.Error(err))
+		return userModel.User{}, err
+	}
+
+	return user, nil
+}
+
 func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 	token, err := jwt.ParseWithClaims(
 		refreshToken,

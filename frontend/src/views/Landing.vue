@@ -9,8 +9,8 @@
         <p class="eyebrow">SelfDev</p>
         <h1>Track everything that matters.</h1>
         <p class="hero-copy">
-          A clean self-development tracker for habits, tasks, and goals. Create your account,
-          verify your email, and keep your routine in one focused place.
+          A clean self-development tracker for habits, tasks, and goals. Create your account, verify
+          your email, and keep your routine in one focused place.
         </p>
 
         <div class="hero-actions">
@@ -44,8 +44,8 @@
       <div class="section-card section-card-large">
         <p>
           SelfDev is a personal tracker designed to stay out of your way. The current product
-          centers on account creation, email verification, secure login, and a private profile
-          area so you can return to the same workspace every day.
+          centers on account creation, email verification, secure login, and a private profile area
+          so you can return to the same workspace every day.
         </p>
         <p>
           The tone is intentionally minimal: clear actions, calm visuals, and a lightweight flow
@@ -101,8 +101,8 @@
         <p class="eyebrow">Final CTA</p>
         <h2>Start your routine with less friction.</h2>
         <p>
-          Create your account, verify your email, and keep your habits, tasks, and goals in one
-          calm place.
+          Create your account, verify your email, and keep your habits, tasks, and goals in one calm
+          place.
         </p>
 
         <div class="hero-actions">

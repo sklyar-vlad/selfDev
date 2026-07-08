@@ -10,11 +10,14 @@ import (
 
 	appErrors "github.com/sklyar-vlad/selfDev/internal/errors"
 	"github.com/sklyar-vlad/selfDev/internal/handler/auth/dto"
+	userdto "github.com/sklyar-vlad/selfDev/internal/handler/user/dto"
+	userModel "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 
 type AuthService interface {
 	Register(ctx context.Context, username, email, password string) error
 	Login(ctx context.Context, username, email, password string) (string, string, error)
+	GetCurrentUser(ctx context.Context, accessToken string) (userModel.User, error)
 	Logout(ctx context.Context, refreshToken string) error
 	ConfirmEmail(ctx context.Context, token string) error
 	Refresh(ctx context.Context, refreshToken string) (string, error)
@@ -107,6 +110,28 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("access_token")
+	if err != nil || cookie.Value == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := h.service.GetCurrentUser(r.Context(), cookie.Value)
+	if err != nil {
+		h.logger.Error("failed get current user", zap.Error(err))
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err = json.NewEncoder(w).Encode(userdto.ToUserResponse(user)); err != nil {
+		h.logger.Error("failed encode current user", zap.Error(err))
+	}
 }
 
 func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
