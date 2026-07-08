@@ -119,7 +119,8 @@ func (s *Service) Login(ctx context.Context, username, email, password string) (
 		return "", "", appErrors.ErrInvalidPassword
 	}
 
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, authModel.NewRefreshClaims(user.UserId)).SignedString([]byte(s.cfg.Secret))
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, authModel.NewRefreshClaims(user.UserId)).
+		SignedString([]byte(s.cfg.Secret))
 	if err != nil {
 		s.logger.Error("failed hash generation", zap.Error(err))
 		return "", "", fmt.Errorf("failed hash generation: %v", err)
@@ -127,7 +128,8 @@ func (s *Service) Login(ctx context.Context, username, email, password string) (
 
 	refreshTokenHash := sha256.Sum256([]byte(refreshToken))
 
-	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, authModel.NewAccessClaims(user.UserId)).SignedString([]byte(s.cfg.Secret))
+	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, authModel.NewAccessClaims(user.UserId)).
+		SignedString([]byte(s.cfg.Secret))
 	if err != nil {
 		s.logger.Error("failed signed token", zap.Error(err))
 		return "", "", fmt.Errorf("failed signed token: %v", err)
@@ -139,7 +141,11 @@ func (s *Service) Login(ctx context.Context, username, email, password string) (
 	tokens.ExpiresAt = time.Now().AddDate(0, 1, 0)
 	tokens.UserId = user.UserId
 
-	s.logger.Info("create model of tokens", zap.String("refresh token", tokens.RefreshToken), zap.String("access token", tokens.AccessToken))
+	s.logger.Info(
+		"create model of tokens",
+		zap.String("refresh token", tokens.RefreshToken),
+		zap.String("access token", tokens.AccessToken),
+	)
 
 	err = s.repo.CreateRefreshToken(ctx, tokens)
 	if err != nil {
@@ -178,8 +184,6 @@ func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 	s.logger.Info("success logout user", zap.String("user_id", claims.UserId.String()))
 	return nil
 }
-
-
 
 func (s *Service) ConfirmEmail(ctx context.Context, token string) error {
 	userId, err := s.repo.ConsumeToken(ctx, token)
@@ -242,7 +246,8 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, err
 		return "", nil
 	}
 
-	newAccessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, authModel.NewAccessClaims(claims.UserId)).SignedString([]byte(s.cfg.Secret))
+	newAccessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, authModel.NewAccessClaims(claims.UserId)).
+		SignedString([]byte(s.cfg.Secret))
 	if err != nil {
 		s.logger.Error("failed signed token", zap.String("user_id", claims.UserId.String()), zap.Error(err))
 		return "", fmt.Errorf("failed signed token: %v", err)
