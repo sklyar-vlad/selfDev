@@ -6,6 +6,7 @@ import (
 
 type AuthHandler interface {
 	Login(w http.ResponseWriter, r *http.Request)
+	Me(w http.ResponseWriter, r *http.Request)
 	Logout(w http.ResponseWriter, r *http.Request)
 	Register(w http.ResponseWriter, r *http.Request)
 	ConfirmEmail(w http.ResponseWriter, r *http.Request)
@@ -20,7 +21,17 @@ type UserHandler interface {
 	// UpdateUser(w http.ResponseWriter, r *http.Request)
 }
 
-func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler, authHandler AuthHandler) {
+type HabitHandler interface {
+	GetHabits(w http.ResponseWriter, r *http.Request)
+	CreateHabit(w http.ResponseWriter, r *http.Request)
+	// UpdateHabit(w http.ResponseWriter, r *http.Request)
+	DeleteHabit(w http.ResponseWriter, r *http.Request)
+	ConfirmHabit(w http.ResponseWriter, r *http.Request)
+	CancelHabit(w http.ResponseWriter, r *http.Request)
+	GetHabitConfirmDates(w http.ResponseWriter, r *http.Request)
+}
+
+func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler, authHandler AuthHandler, habitHandler HabitHandler) {
 	// User
 	mux.HandleFunc("POST /api/users", userHandler.CreateUser)
 	// mux.HandleFunc("GET /api/users", userHandler.GetUsers)
@@ -29,9 +40,19 @@ func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler, authHandler Aut
 	// mux.HandleFunc("DELETE /api/users/{id}", userHandler.DeleteUser)
 
 	// Auth
+	mux.HandleFunc("GET /api/auth/me", authHandler.Me)
 	mux.HandleFunc("POST /api/login", authHandler.Login)
 	mux.HandleFunc("POST /api/logout", authHandler.Logout)
 	mux.HandleFunc("POST /api/register", authHandler.Register)
 	mux.HandleFunc("POST /api/verify/{token}", authHandler.ConfirmEmail)
 	mux.HandleFunc("POST /api/refresh", authHandler.Refresh)
+
+	// Habit
+	mux.HandleFunc("POST /api/habit", habitHandler.CreateHabit)
+	mux.HandleFunc("GET /api/habit/{user_id}", habitHandler.GetHabits)
+	// mux.HandleFunc("PATCH /api/habit/{id}", habitHandler.UpdateHabit)
+	mux.HandleFunc("DELETE /api/habit/{id}", habitHandler.DeleteHabit)
+	mux.HandleFunc("POST /api/habit/{id}/confirm", habitHandler.ConfirmHabit)
+	mux.HandleFunc("POST /api/habit/{id}/cancel", habitHandler.CancelHabit)
+	mux.HandleFunc("GET /api/habit/{id}/confirmed", habitHandler.GetHabitConfirmDates)
 }

@@ -11,10 +11,10 @@
 
     <!-- CENTER -->
     <nav class="nav">
-      <a href="#">About</a>
-      <a href="#">Features</a>
-      <a href="#">Tech</a>
-      <a href="#">Faq</a>
+      <a href="#about">About</a>
+      <a href="#features">Features</a>
+      <a href="#tech">Tech</a>
+      <a href="#faq">Faq</a>
     </nav>
 
     <!-- RIGHT -->

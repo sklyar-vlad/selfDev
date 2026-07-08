@@ -80,7 +80,8 @@ func (r *repository) GetRefreshToken(ctx context.Context, userId uuid.UUID) (mod
 func (r *repository) DeleteRefreshToken(ctx context.Context, userId uuid.UUID) error {
 	query := `
 	DELETE FROM refresh_tokens
-	WHERE user_id = $1`
+	WHERE user_id = $1
+	`
 
 	_, err := r.pool.Exec(ctx, query, userId)
 	if err != nil {

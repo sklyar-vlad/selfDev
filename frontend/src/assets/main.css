@@ -44,6 +44,7 @@ html[data-theme='light'] {
   --shadow-md: 0 8px 40px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.16);
 }
+
 html[data-theme='dark'] {
   --bg-image: url('/DarkWallpaper.jpg');
 
@@ -71,9 +72,11 @@ html[data-theme='dark'] {
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
+
 /* =========================
    RESET
 ========================= */
+
 * {
   margin: 0;
   padding: 0;
@@ -83,42 +86,42 @@ html[data-theme='dark'] {
 html,
 body {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
 }
 
 /* =========================
-   BASE
+   PAGE BACKGROUND
 ========================= */
-body {
-  font-family: 'Hind Madurai', system-ui, sans-serif;
 
+html {
+  background-image: var(--bg-image);
   background-size: cover;
-  background-position: center;
+  background-position: center top;
   background-repeat: no-repeat;
+  background-attachment: fixed;
+}
 
+body {
+  min-height: 100vh;
+  font-family: 'Hind Madurai', system-ui, sans-serif;
   color: var(--text-primary);
+  background: transparent;
 
   transition:
     background-image 0.4s ease,
     color 0.3s ease;
 }
 
-html[data-theme='light'] body {
-  background-image: url('/LightWallpaper.jpg');
-}
-
-html[data-theme='dark'] body {
-  background-image: url('/DarkWallpaper.jpg');
-}
-
 #app {
   width: 100%;
-  height: 100%;
+  min-height: 100vh;
+  background: transparent;
 }
 
 /* =========================
-   TYPOGRAPHY HELPERS
+   TYPOGRAPHY
 ========================= */
+
 h1,
 h2,
 h3 {
@@ -129,6 +132,7 @@ h3 {
 /* =========================
    SCROLLBAR
 ========================= */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -139,7 +143,7 @@ h3 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--border-default);
   border-radius: 4px;
 }
 
@@ -150,9 +154,10 @@ h3 {
 /* =========================
    SELECTION
 ========================= */
+
 ::selection {
   background: var(--accent-primary);
-  color: white;
+  color: #fff;
 }
 
 /* =========================
@@ -168,20 +173,20 @@ h3 {
 
 .Vue-Toastification__toast--error {
   background: var(--error);
-  color: white;
+  color: #fff;
 }
 
 .Vue-Toastification__toast--success {
   background: var(--success);
-  color: white;
+  color: #fff;
 }
 
 .Vue-Toastification__toast--warning {
   background: var(--warning);
-  color: black;
+  color: #000;
 }
 
 .Vue-Toastification__toast--info {
   background: var(--info);
-  color: white;
+  color: #fff;
 }
