@@ -14,7 +14,7 @@
       <!-- БЛОК ПРОФИЛЯ -->
       <section v-if="!loading && !error" class="user-profile-section card-surface">
         <div class="avatar-block">
-          <div class="avatar-image"></div>
+          <img class="avatar-image" :src="defaultAvatar" alt="User avatar" />
           <div class="user-name-wrapper">
             <span class="user-label">User</span>
             <h1 class="username">{{ user?.username || 'SelfDev_Hero' }}</h1>
@@ -48,25 +48,55 @@
       <div v-if="!loading && !error" class="main-grid">
         <!-- ЛЕВАЯ КОЛОНКА: ПРИВЫЧКИ С НАВИГАЦИЕЙ И АНИМАЦИЕЙ -->
         <section class="habits-container">
-          <!-- Категории привычек (Nav Bar) -->
-          <nav class="categories-nav">
+          <div class="habits-toolbar card-surface">
             <button
-              v-for="category in categories"
-              :key="category.value"
-              class="nav-tab"
-              :class="{ active: currentCategory === category.value }"
-              @click="currentCategory = category.value"
+              class="btn btn-primary btn-sm"
+              type="button"
+              @click="showCreateHabitForm = !showCreateHabitForm"
             >
-              {{ category.label }}
+              Create Habit
             </button>
-          </nav>
+          </div>
+
+          <div
+            v-if="showCreateHabitForm"
+            class="habit-modal-overlay"
+            @click.self="showCreateHabitForm = false"
+          >
+            <form class="habit-create-form card-surface" @submit.prevent="createHabit">
+              <h3>Create Habit</h3>
+              <input
+                v-model="newHabit.name"
+                class="habit-input"
+                type="text"
+                placeholder="Habit name"
+                required
+              />
+              <input
+                v-model="newHabit.description"
+                class="habit-input"
+                type="text"
+                placeholder="Description"
+              />
+              <label class="habit-checkbox">
+                <input v-model="newHabit.isGood" type="checkbox" />
+                <span>Good habit</span>
+              </label>
+              <div class="habit-create-actions">
+                <button class="btn btn-primary btn-sm" type="submit">Save</button>
+                <button class="btn btn-sm" type="button" @click="showCreateHabitForm = false">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
 
           <!-- 🔥 Новое "окно видимости" с эффектом плавного затухания по краям -->
           <div class="habits-fade-viewport">
             <div class="habits-scroll-window">
               <TransitionGroup name="habit-fade" tag="div" class="habits-wrapper-layout">
                 <article
-                  v-for="habit in filteredHabits"
+                  v-for="habit in habits"
                   :key="habit.id"
                   class="habit-card card-surface"
                   :class="habit.color"
@@ -76,8 +106,8 @@
                       <h2>{{ habit.name }}</h2>
                       <span class="habit-status">{{ habit.confirmedCount }}/365 cleared</span>
                     </div>
-                    <button class="btn btn-primary btn-sm" @click="confirmHabit(habit.id)">
-                      Done
+                    <button class="btn btn-primary btn-sm" @click="toggleHabit(habit)">
+                      {{ isHabitDoneToday(habit) ? 'Cancel' : 'Done' }}
                     </button>
                   </div>
 
@@ -136,6 +166,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import WelcomeHeader from '@/components/Header/WelcomeHeader.vue'
+import defaultAvatar from '@/assets/default-avatar.jpg'
 
 interface User {
   user_id: string
@@ -166,13 +197,12 @@ const user = ref<User | null>(null)
 const habits = ref<Habit[]>([])
 const loading = ref(true)
 const error = ref('')
-
-const categories = [
-  { label: 'All Habits', value: 'all' },
-  { label: 'Languages', value: 'languages' },
-  { label: 'Coding', value: 'coding' },
-  { label: 'Health', value: 'health' },
-]
+const showCreateHabitForm = ref(false)
+const newHabit = ref({
+  name: '',
+  description: '',
+  isGood: true,
+})
 
 const dayMs = 24 * 60 * 60 * 1000
 
@@ -185,14 +215,37 @@ function toIsoDate(value: string | Date) {
 
 function buildHeatmap(completedDates: string[]) {
   const completed = new Set(completedDates.map(toIsoDate))
-  const days: HeatmapDay[] = []
-  const today = new Date()
-  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
 
-  for (let i = 364; i >= 0; i -= 1) {
-    const date = new Date(end.getTime() - i * dayMs)
-    const key = toIsoDate(date)
-    days.push({ key, level: completed.has(key) ? 4 : 0 })
+  const days: HeatmapDay[] = []
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // находим понедельник текущей недели
+  const end = new Date(today)
+  const day = end.getDay()
+  const mondayOffset = day === 0 ? -6 : 1 - day
+
+  end.setDate(end.getDate() + mondayOffset + 6)
+
+  // берем ровно 52 недели назад
+  const start = new Date(end)
+  start.setDate(start.getDate() - 52 * 7 + 1)
+
+  const cursor = new Date(start)
+
+  while (cursor <= end) {
+    const key = toIsoDate(cursor)
+
+    // будущие дни пустые НЕ добавляем
+    if (cursor <= today) {
+      days.push({
+        key,
+        level: completed.has(key) ? 4 : 0,
+      })
+    }
+
+    cursor.setDate(cursor.getDate() + 1)
   }
 
   return days
@@ -210,6 +263,11 @@ function habitColor(category: string) {
   if (category === 'coding') return 'purple'
   if (category === 'languages') return 'blue'
   return 'green'
+}
+
+function isHabitDoneToday(habit: Habit) {
+  const today = toIsoDate(new Date())
+  return habit.confirmedDates.map(toIsoDate).includes(today)
 }
 
 async function fetchJson<T>(url: string, options: RequestInit = {}) {
@@ -242,6 +300,24 @@ async function fetchHabitDates(habitId: string) {
   return (data.dates || data.Dates || [])
     .map((item) => item.date || item.Date || '')
     .filter(Boolean)
+}
+
+async function refreshHabit(habitId: string) {
+  const dates = await fetchHabitDates(habitId)
+  applyHabitDates(habitId, dates)
+}
+
+function applyHabitDates(habitId: string, dates: string[]) {
+  habits.value = habits.value.map((habit) =>
+    habit.id === habitId
+      ? {
+          ...habit,
+          confirmedDates: dates,
+          confirmedCount: dates.length,
+          heatmap: buildHeatmap(dates),
+        }
+      : habit,
+  )
 }
 
 async function fetchHabits(userId: string) {
@@ -299,38 +375,52 @@ async function fetchHabits(userId: string) {
 
 async function confirmHabit(habitId: string) {
   await fetchJson(`/api/habit/${encodeURIComponent(habitId)}/confirm`, { method: 'POST' })
-  const dates = await fetchHabitDates(habitId)
-  habits.value = habits.value.map((habit) =>
-    habit.id === habitId
-      ? {
-          ...habit,
-          confirmedDates: dates,
-          confirmedCount: dates.length,
-          heatmap: buildHeatmap(dates),
-        }
-      : habit,
-  )
+  applyHabitDates(habitId, [
+    ...new Set([
+      ...(habits.value.find((habit) => habit.id === habitId)?.confirmedDates || []),
+      toIsoDate(new Date()),
+    ]),
+  ])
+  await refreshHabit(habitId)
 }
 
 async function cancelHabit(habitId: string) {
   await fetchJson(`/api/habit/${encodeURIComponent(habitId)}/cancel`, { method: 'POST' })
-  const dates = await fetchHabitDates(habitId)
-  habits.value = habits.value.map((habit) =>
-    habit.id === habitId
-      ? {
-          ...habit,
-          confirmedDates: dates,
-          confirmedCount: dates.length,
-          heatmap: buildHeatmap(dates),
-        }
-      : habit,
+  applyHabitDates(
+    habitId,
+    (habits.value.find((habit) => habit.id === habitId)?.confirmedDates || []).filter(
+      (date) => toIsoDate(date) !== toIsoDate(new Date()),
+    ),
   )
+  await refreshHabit(habitId)
 }
 
-const filteredHabits = computed(() => {
-  if (currentCategory.value === 'all') return habits.value
-  return habits.value.filter((habit) => habit.category === currentCategory.value)
-})
+async function toggleHabit(habit: Habit) {
+  if (isHabitDoneToday(habit)) {
+    await cancelHabit(habit.id)
+    return
+  }
+
+  await confirmHabit(habit.id)
+}
+
+async function createHabit() {
+  if (!user.value) return
+
+  await fetchJson('/api/habit', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: user.value.user_id,
+      name: newHabit.value.name,
+      description: newHabit.value.description,
+      is_good: newHabit.value.isGood,
+    }),
+  })
+
+  showCreateHabitForm.value = false
+  newHabit.value = { name: '', description: '', isGood: true }
+  await fetchHabits(user.value.user_id)
+}
 
 const perfectDays = computed(() =>
   habits.value.reduce((sum, habit) => sum + habit.confirmedCount, 0),
@@ -534,6 +624,63 @@ onMounted(async () => {
   min-height: 0;
 }
 
+.habits-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+}
+
+.habit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.habit-create-form {
+  width: min(100%, 420px);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.habit-create-form h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.habit-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.habit-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.habit-create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .categories-nav {
   display: flex;
   gap: 8px;
@@ -653,7 +800,7 @@ onMounted(async () => {
    HABIT CARD & HEATMAP (365 ДНЕЙ)
 ========================================= */
 .habit-card {
-  padding: 24px;
+  padding: 20px;
   position: relative;
   transition:
     border-color 0.25s ease,
@@ -691,7 +838,7 @@ onMounted(async () => {
   display: flex;
   gap: 16px;
   background: rgba(0, 0, 0, 0.15);
-  padding: 16px;
+  padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--border-subtle);
   width: 100%;
@@ -711,9 +858,12 @@ onMounted(async () => {
 /* Контейнер для горизонтального скролла сетки кубиков (365 дней) */
 .cubes-scroll-container {
   flex: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.cubes-grid::after {
+  content: '';
 }
 
 /* Стилизация скроллбара для хитмапа */
@@ -728,15 +878,16 @@ onMounted(async () => {
 /* 🔥 ИСПРАВЛЕНИЕ: Кубики сохраняют исходный размер (12px), сетка вмещает весь год */
 .cubes-grid {
   display: grid;
-  grid-template-rows: repeat(7, 12px);
+  grid-template-rows: repeat(7, minmax(0, 1fr));
   grid-auto-flow: column;
-  grid-auto-columns: 12px;
-  gap: 5px;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 2px;
+  width: 100%;
 }
 
 .cube {
-  width: 12px;
-  height: 12px;
+  width: 100%;
+  aspect-ratio: 1;
   background: var(--border-default);
   border-radius: 3px;
 }

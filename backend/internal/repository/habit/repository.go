@@ -127,7 +127,6 @@ func (r *repository) GetHabitConfirmDates(ctx context.Context, habitId uuid.UUID
 	SELECT habit_id, completed_at
 	FROM habits_completed
 	WHERE habit_id = $1
-	LIMIT 1
 	`
 
 	rows, err := r.pool.Query(ctx, query, habitId)
