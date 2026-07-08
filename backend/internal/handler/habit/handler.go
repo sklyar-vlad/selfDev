@@ -15,6 +15,8 @@ import (
 type HabitService interface {
 	GetHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error)
 	CreateHabit(ctx context.Context, userId uuid.UUID, name, description string, isGood bool) (model.Habit, error)
+	DeleteHabit(ctx context.Context, habitId uuid.UUID) error
+	// UpdateHabit(ctx context.Context, habitId uuid.UUID) error
 }
 
 type handler struct {
@@ -82,3 +84,52 @@ func (h *handler) CreateHabit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 }
+
+func (h *handler) DeleteHabit(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("user_id")
+	habitId, err := uuid.Parse(id)
+
+	if err != nil {
+		h.logger.Error("invalid habit_id", zap.Error(err))
+		http.Error(w, "invalid habit_id", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.DeleteHabit(r.Context(), habitId)
+
+	if err != nil {
+		h.logger.Error("failed delete habits", zap.Error(err))
+		http.Error(w, "failed delete habits", http.StatusInternalServerError)
+	}
+
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *handler) ConfirmHabit(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("habit_id")
+}
+
+
+// func (h *handler) UpdateHabit(w http.ResponseWriter, r *http.Request) {
+// 	id := r.PathValue("user_id")
+// 	habitId, err := uuid.Parse(id)
+
+// 	if err != nil {
+// 		h.logger.Error("invalid habit_id", zap.Error(err))
+// 		http.Error(w, "invalid habit_id", http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	err = h.service.UpdateHabit(r.Context(), habitId)
+
+// 	if err != nil {
+// 		h.logger.Error("failed update habits", zap.Error(err))
+// 		http.Error(w, "failed update habits", http.StatusInternalServerError)
+// 	}
+
+
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusNoContent)
+// }

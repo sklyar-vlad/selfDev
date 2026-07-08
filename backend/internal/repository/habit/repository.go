@@ -77,3 +77,18 @@ func (r *repository) CreateHabit(ctx context.Context, habit model.Habit) error {
 
 	return nil
 }
+
+func (r *repository) DeleteHabit(ctx context.Context, habitId uuid.UUID) error {
+	query := `
+	DELETE FROM habits
+	WHERE habit_id = $1
+	`
+
+	_, err := r.pool.Exec(ctx, query, habitId)
+	if err != nil {
+		r.logger.Error("failed delete habit from database", zap.Error(err))
+		return fmt.Errorf("failed delete habit from database: %v", err)
+	}
+
+	return nil
+}

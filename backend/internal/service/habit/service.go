@@ -14,6 +14,7 @@ import (
 type HabitRepository interface {
 	GetAllHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error)
 	CreateHabit(ctx context.Context, habit model.Habit) error
+	DeleteHabit(ctx context.Context, habitId uuid.UUID) error
 }
 
 type UserService interface {
@@ -65,3 +66,11 @@ func (s *service) CreateHabit(
 	return habit, nil
 }
 
+func (s *service) DeleteHabit(ctx context.Context, habitId uuid.UUID) error {
+	if err := s.repo.DeleteHabit(ctx, habitId); err != nil {
+		s.logger.Error("failed delete habit from database", zap.Error(err))
+		return fmt.Errorf("failed delete habit from database: %v", err)
+	}
+	
+	return nil
+}
