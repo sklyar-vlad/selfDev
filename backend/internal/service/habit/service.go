@@ -74,3 +74,7 @@ func (s *service) DeleteHabit(ctx context.Context, habitId uuid.UUID) error {
 	
 	return nil
 }
+
+func (s *service) ConfirmHabit(ctx context.Context, habitId uuid.UUID) error {
+	if err := s.repo.ConfirmHabit
+}

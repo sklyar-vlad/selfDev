@@ -50,7 +50,7 @@ func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler, authHandler Aut
 	mux.HandleFunc("GET /api/habit/{user_id}", habitHandler.GetHabits)
 	// mux.HandleFunc("PATCH /api/habit/{id}", habitHandler.UpdateHabit)
 	mux.HandleFunc("DELETE /api/habit/{id}", habitHandler.DeleteHabit)
-	mux.HandleFunc("GET /api/habit/{id}/confirmed", habitHandler.ConfirmHabit)
+	mux.HandleFunc("POST /api/habit/{id}/confirmed", habitHandler.ConfirmHabit)
 	// mux.HandleFunc("GET /api/habit/{id}/confirmed", habitHandler.CancelHabit)
 	// mux.HandleFunc("GET /api/habit/{id}/confirmed", habitHandler.GetHabitConfirmDates)
 }

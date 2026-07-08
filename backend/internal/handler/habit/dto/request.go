@@ -8,7 +8,3 @@ type HabitRequest struct {
 	Description string    `json:"description"`
 	IsGood      bool      `json:"is_good"`
 }
-
-type Confirm struct {
-	HabitId uuid.UUID `json:"habit_id"`
-}

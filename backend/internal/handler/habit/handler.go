@@ -16,6 +16,7 @@ type HabitService interface {
 	GetHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error)
 	CreateHabit(ctx context.Context, userId uuid.UUID, name, description string, isGood bool) (model.Habit, error)
 	DeleteHabit(ctx context.Context, habitId uuid.UUID) error
+	ConfirmHabit(ctx context.Context, habitId uuid.UUID) error
 	// UpdateHabit(ctx context.Context, habitId uuid.UUID) error
 }
 
@@ -109,6 +110,23 @@ func (h *handler) DeleteHabit(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) ConfirmHabit(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("habit_id")
+	habitId, err := uuid.Parse(id)
+
+	if err != nil {
+		h.logger.Error("invalid habit_id", zap.Error(err))
+		http.Error(w, "invalid habit_id", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.ConfirmHabit(r.Context(), habitId)
+
+	if err != nil {
+		h.logger.Error("failed confirm habit", zap.Error(err))
+		http.Error(w, "failed confirm habit", http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 }
 
 
