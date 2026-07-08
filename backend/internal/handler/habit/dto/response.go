@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 
 	model "github.com/sklyar-vlad/selfDev/internal/model/habit"
@@ -34,5 +36,33 @@ func ToHabitsResponse(habits []model.Habit) HabitsResponse {
 
 	return HabitsResponse{
 		Habits: resp,
+	}
+}
+
+type HabitDateResponse struct {
+	HabitId uuid.UUID
+	Date    time.Time
+}
+
+type HabitDatesResponse struct {
+	Dates []HabitDateResponse
+}
+
+func ToHabitDateResponse(h model.Date) HabitDateResponse {
+	return HabitDateResponse{
+		HabitId: h.HabitId,
+		Date:    h.Date,
+	}
+}
+
+func ToHabitDatesResponse(habits []model.Date) HabitDatesResponse {
+	resp := make([]HabitDateResponse, 0, len(habits))
+
+	for _, h := range habits {
+		resp = append(resp, ToHabitDateResponse(h))
+	}
+
+	return HabitDatesResponse{
+		Dates: resp,
 	}
 }

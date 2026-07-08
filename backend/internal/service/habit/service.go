@@ -15,6 +15,9 @@ type HabitRepository interface {
 	GetAllHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error)
 	CreateHabit(ctx context.Context, habit model.Habit) error
 	DeleteHabit(ctx context.Context, habitId uuid.UUID) error
+	ConfirmHabit(ctx context.Context, habitId uuid.UUID) error
+	CancelHabit(ctx context.Context, habitId uuid.UUID) error
+	GetHabitConfirmDates(ctx context.Context, habitId uuid.UUID) ([]model.Date, error)
 }
 
 type UserService interface {
@@ -37,7 +40,6 @@ func NewService(repo HabitRepository, userService UserService, logger *zap.Logge
 
 func (s *service) GetHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error) {
 	habits, err := s.repo.GetAllHabits(ctx, userId)
-
 	if err != nil {
 		s.logger.Error("failed get habits by user_id", zap.Error(err))
 		return []model.Habit{}, fmt.Errorf("failed get habits by user_id: %v", err)
@@ -71,10 +73,34 @@ func (s *service) DeleteHabit(ctx context.Context, habitId uuid.UUID) error {
 		s.logger.Error("failed delete habit from database", zap.Error(err))
 		return fmt.Errorf("failed delete habit from database: %v", err)
 	}
-	
+
 	return nil
 }
 
 func (s *service) ConfirmHabit(ctx context.Context, habitId uuid.UUID) error {
-	if err := s.repo.ConfirmHabit
+	if err := s.repo.ConfirmHabit(ctx, habitId); err != nil {
+		s.logger.Error("failed confirm date of habit", zap.Error(err))
+		return fmt.Errorf("failed confirm date of habit: %v", err)
+	}
+
+	return nil
+}
+
+func (s *service) CancelHabit(ctx context.Context, habitId uuid.UUID) error {
+	if err := s.repo.CancelHabit(ctx, habitId); err != nil {
+		s.logger.Error("failed cancel date of habit", zap.Error(err))
+		return fmt.Errorf("failed cancel date of habit: %v", err)
+	}
+
+	return nil
+}
+
+func (s *service) GetHabitConfirmDates(ctx context.Context, habitId uuid.UUID) ([]model.Date, error) {
+	dates, err := s.repo.GetHabitConfirmDates(ctx, habitId)
+	if err != nil {
+		s.logger.Error("failed cancel date of habit", zap.Error(err))
+		return []model.Date{}, fmt.Errorf("failed cancel date of habit: %v", err)
+	}
+
+	return dates, nil
 }

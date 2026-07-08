@@ -9,9 +9,9 @@ CREATE TABLE habits (
 );
 
 CREATE TABLE habits_completed (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     habit_id UUID NOT NULL REFERENCES habits(habit_id),
-    completed_at TIMESTAMP
+    completed_at TIMESTAMP DEFAULT NOW()
 );
 
 -- +goose Down

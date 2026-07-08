@@ -23,7 +23,6 @@ func NewRepository(pool *pgxpool.Pool, logger *zap.Logger) *repository {
 	}
 }
 
-
 func (r *repository) GetAllHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error) {
 	query := `
 	SELECT habit_id, name, description, is_good
@@ -91,4 +90,71 @@ func (r *repository) DeleteHabit(ctx context.Context, habitId uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (r *repository) ConfirmHabit(ctx context.Context, habitId uuid.UUID) error {
+	query := `
+	INSERT INTO habits_completed (habit_id)
+	VALUES ($1)
+	`
+
+	_, err := r.pool.Exec(ctx, query, habitId)
+	if err != nil {
+		r.logger.Error("failed confirm habit in database", zap.Error(err))
+		return fmt.Errorf("failed confirm habit in database: %v", err)
+	}
+
+	return nil
+}
+
+func (r *repository) CancelHabit(ctx context.Context, habitId uuid.UUID) error {
+	query := `
+	DELETE FROM habits_completed
+	WHERE habit_id = $1
+	`
+
+	_, err := r.pool.Exec(ctx, query, habitId)
+	if err != nil {
+		r.logger.Error("failed delete date habit from database", zap.Error(err))
+		return fmt.Errorf("failed delete date habit from database: %v", err)
+	}
+
+	return nil
+}
+
+func (r *repository) GetHabitConfirmDates(ctx context.Context, habitId uuid.UUID) ([]model.Date, error) {
+	query := `
+	SELECT habit_id, completed_at
+	FROM habits_completed
+	WHERE habit_id = $1
+	LIMIT 1
+	`
+
+	rows, err := r.pool.Query(ctx, query, habitId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get habit dates: %w", err)
+	}
+	defer rows.Close()
+
+	var dates []model.Date
+
+	for rows.Next() {
+		var h model.Date
+
+		err := rows.Scan(
+			&h.HabitId,
+			&h.Date,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan dates: %w", err)
+		}
+
+		dates = append(dates, h)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return dates, nil
 }

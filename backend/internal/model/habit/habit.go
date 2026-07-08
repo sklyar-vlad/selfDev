@@ -1,6 +1,10 @@
 package habit
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Habit struct {
 	HabitId     uuid.UUID
@@ -8,6 +12,11 @@ type Habit struct {
 	Name        string
 	Description string
 	IsGood      bool
+}
+
+type Date struct {
+	HabitId uuid.UUID
+	Date    time.Time
 }
 
 func NewHabit(userId uuid.UUID, name, description string, isGood bool) (Habit, error) {
