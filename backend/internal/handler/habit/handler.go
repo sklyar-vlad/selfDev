@@ -72,6 +72,9 @@ func (h *handler) CreateHabit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed create habit", http.StatusInternalServerError)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
 	if err = json.NewEncoder(w).Encode(dto.ToHabitResponse(habit)); err != nil {
 		h.logger.Error(
 			"failed create response with habit",
@@ -79,9 +82,6 @@ func (h *handler) CreateHabit(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *handler) DeleteHabit(w http.ResponseWriter, r *http.Request) {
