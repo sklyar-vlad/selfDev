@@ -29,7 +29,7 @@ tasks:
   dev-up:
     desc: start all containers for develope with open backend ports and database
     cmds:
-      - docker compose -f ./infra/docker-compose.dev.yaml up -d
+      - docker compose -f ./infra/docker-compose.dev.yaml up -d --build
 
   dev-down:
     desc: stop all containers 

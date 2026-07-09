@@ -17,6 +17,25 @@ services:
     networks:
       - self-dev
 
+  auth:
+    image: casbin/casdoor:latest
+    restart: unless-stopped
+    environment:
+      - GIN_MODE=release
+    volumes:
+      - "./conf:/conf"
+      - "./logs:/logs"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`auth.self-dev.test`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8000"
+    networks:
+      - self-dev
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   backend:
     build:
       context: ..
@@ -25,9 +44,9 @@ services:
       - self-dev
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.self-dev-backend.rule=Host(`self-dev.test`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.self-dev-backend.entrypoints=web"
-      - "traefik.http.services.self-dev-backend.loadbalancer.server.port=8080"
+      - "traefik.http.routers.backend.rule=Host(`self-dev.test`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
     depends_on:
       db:
         condition: service_healthy
@@ -40,9 +59,9 @@ services:
       - self-dev
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.self-dev-frontend.rule=Host(`self-dev.test`)"
-      - "traefik.http.routers.self-dev-frontend.entrypoints=web"
-      - "traefik.http.services.self-dev-frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.frontend.rule=Host(`self-dev.test`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
   db:
     image: postgres:18-alpine
@@ -65,9 +84,26 @@ services:
     networks:
       - self-dev
 
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: casdoor
+    volumes:
+      - casdoor-mysql:/var/lib/mysql
+    networks:
+      - self-dev
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
 volumes:
   self-dev:
     name: "self-dev-volume"
+  casdoor-mysql:
 
 networks:
   self-dev:
