@@ -24,7 +24,7 @@ import (
 	authSrv "github.com/sklyar-vlad/selfDev/internal/service/auth"
 	habitSrv "github.com/sklyar-vlad/selfDev/internal/service/habit"
 	userSrv "github.com/sklyar-vlad/selfDev/internal/service/user"
-	"github.com/sklyar-vlad/selfDev/logger"
+	customLogger "github.com/sklyar-vlad/selfDev/logger"
 	"github.com/sklyar-vlad/selfDev/middleware"
 )
 
@@ -34,7 +34,7 @@ func main() {
 		log.Fatalf("failed create config: %v", err)
 	}
 
-	logger, err := logger.NewLogger(cfg.Logger)
+	logger, err := customLogger.NewLogger(cfg.Logger)
 	if err != nil {
 		log.Fatal("failed create logger", zap.Error(err))
 	}

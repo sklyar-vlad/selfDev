@@ -21,7 +21,7 @@ import (
 
 type UserService interface {
 	CreateUser(ctx context.Context, username, email, password string) (userModel.User, error)
-	UpdateUser(ctx context.Context, user userModel.User) error
+	UpdateUser(ctx context.Context, user *userModel.User) error
 	GetByLogin(ctx context.Context, username, password string) (userModel.User, error)
 	GetById(ctx context.Context, id uuid.UUID) (userModel.User, error)
 }
@@ -31,7 +31,7 @@ type EmailAdapter interface {
 }
 
 type Repository interface {
-	CreateRefreshToken(ctx context.Context, Tokens authModel.Tokens) error
+	CreateRefreshToken(ctx context.Context, Tokens *authModel.Tokens) error
 	GetRefreshToken(ctx context.Context, userId uuid.UUID) (authModel.Tokens, error)
 	DeleteRefreshToken(ctx context.Context, userId uuid.UUID) error
 	SaveTokenVerify(ctx context.Context, token, userId string) error
@@ -50,10 +50,10 @@ func NewService(
 	repo Repository,
 	userService UserService,
 	emailAdapter EmailAdapter,
-	config config.ConfigJWT,
+	configJwt config.ConfigJWT,
 	logger *zap.Logger,
 ) *Service {
-	return &Service{repo: repo, userService: userService, emailAdapter: emailAdapter, cfg: config, logger: logger}
+	return &Service{repo: repo, userService: userService, emailAdapter: emailAdapter, cfg: configJwt, logger: logger}
 }
 
 func (s *Service) Register(ctx context.Context, username, email, password string) error {
@@ -147,7 +147,7 @@ func (s *Service) Login(ctx context.Context, username, email, password string) (
 		zap.String("access token", tokens.AccessToken),
 	)
 
-	err = s.repo.CreateRefreshToken(ctx, tokens)
+	err = s.repo.CreateRefreshToken(ctx, &tokens)
 	if err != nil {
 		s.logger.Error("failed create refresh token", zap.Error(err))
 		return "", "", fmt.Errorf("failed create refresh token: %v", err)
@@ -231,7 +231,7 @@ func (s *Service) ConfirmEmail(ctx context.Context, token string) error {
 
 	userEmailVerified.EmailVerified = true
 
-	if err = s.userService.UpdateUser(ctx, userEmailVerified); err != nil {
+	if err = s.userService.UpdateUser(ctx, &userEmailVerified); err != nil {
 		return fmt.Errorf("failed verified email: %v", err)
 	}
 

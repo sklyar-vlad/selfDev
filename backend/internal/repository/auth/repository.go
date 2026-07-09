@@ -22,15 +22,15 @@ type repository struct {
 	logger *zap.Logger
 }
 
-func NewRepository(pool *pgxpool.Pool, redis *redis.Client, logger *zap.Logger) *repository {
+func NewRepository(pool *pgxpool.Pool, rds *redis.Client, logger *zap.Logger) *repository {
 	return &repository{
 		pool:   pool,
-		redis:  redis,
+		redis:  rds,
 		logger: logger,
 	}
 }
 
-func (r *repository) CreateRefreshToken(ctx context.Context, tokens model.Tokens) error {
+func (r *repository) CreateRefreshToken(ctx context.Context, tokens *model.Tokens) error {
 	query := `
 	INSERT INTO refresh_tokens (token_hash, user_id, expires_at)
 	VAlUES ($1, $2, $3)	

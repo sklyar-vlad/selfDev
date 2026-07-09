@@ -13,13 +13,13 @@ import (
 	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 
+// TODO: Update(ctx context.Context, user model.User) (model.User, error)
+// TODO: Delete(ctx context.Context, user model.User) error
 type Repository interface {
-	Create(ctx context.Context, user model.User) (model.User, error)
-	Update(ctx context.Context, user model.User) error
+	Create(ctx context.Context, user *model.User) error
+	Update(ctx context.Context, user *model.User) error
 	GetByLogin(ctx context.Context, login string) (model.User, error)
 	GetById(ctx context.Context, userId uuid.UUID) (model.User, error)
-	// Update(ctx context.Context, user model.User) (model.User, error)
-	// Delete(ctx context.Context, user model.User) error
 }
 
 type Service struct {
@@ -55,10 +55,15 @@ func (s *Service) CreateUser(ctx context.Context, username, email, password stri
 		return model.User{}, fmt.Errorf("failed create user model: %v", err)
 	}
 
-	return s.repo.Create(ctx, user)
+	if err = s.repo.Create(ctx, &user); err != nil {
+		s.logger.Error("failed insert user", zap.String("email", email), zap.Error(err))
+		return model.User{}, fmt.Errorf("failed insert user: %v", err)
+	}
+
+	return user, nil
 }
 
-func (s *Service) UpdateUser(ctx context.Context, user model.User) error {
+func (s *Service) UpdateUser(ctx context.Context, user *model.User) error {
 	if err := s.repo.Update(ctx, user); err != nil {
 		return err
 	}

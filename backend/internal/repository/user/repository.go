@@ -28,7 +28,7 @@ func NewRepository(pool *pgxpool.Pool, logger *zap.Logger) *repository {
 	}
 }
 
-func (r *repository) Create(ctx context.Context, user model.User) (model.User, error) {
+func (r *repository) Create(ctx context.Context, user *model.User) error {
 	query := `
 	INSERT INTO users (user_id, role, username, email, email_verified, password)
 	VALUES ($1, $2, $3,	$4, $5, $6)
@@ -46,15 +46,15 @@ func (r *repository) Create(ctx context.Context, user model.User) (model.User, e
 	)
 	if err != nil {
 		r.logger.Error("failed insert user in database", zap.Error(err))
-		return model.User{}, mapDBError(err)
+		return mapDBError(err)
 	}
 
 	r.logger.Info("success insert user in database", zap.String("email", user.Email))
 
-	return user, nil
+	return nil
 }
 
-func (r *repository) Update(ctx context.Context, user model.User) error {
+func (r *repository) Update(ctx context.Context, user *model.User) error {
 	query := `
 	UPDATE users
 	SET 
@@ -152,8 +152,7 @@ func (r *repository) GetById(ctx context.Context, userId uuid.UUID) (model.User,
 func mapDBError(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
-		switch pgErr.Code {
-		case pgerrcode.UniqueViolation:
+		if pgErr.Code == pgerrcode.UniqueViolation {
 			switch pgErr.ConstraintName {
 			case "users_email_key":
 				return appErrors.ErrEmailAlreadyExists

@@ -15,12 +15,12 @@ import (
 )
 
 type AuthService interface {
-	Register(ctx context.Context, username, email, password string) error
 	Login(ctx context.Context, username, email, password string) (string, string, error)
-	GetCurrentUser(ctx context.Context, accessToken string) (userModel.User, error)
 	Logout(ctx context.Context, refreshToken string) error
-	ConfirmEmail(ctx context.Context, token string) error
 	Refresh(ctx context.Context, refreshToken string) (string, error)
+	Register(ctx context.Context, username, email, password string) error
+	ConfirmEmail(ctx context.Context, token string) error
+	GetCurrentUser(ctx context.Context, accessToken string) (userModel.User, error)
 }
 
 type handler struct {
@@ -30,46 +30,6 @@ type handler struct {
 
 func NewHandler(service AuthService, logger *zap.Logger) *handler {
 	return &handler{service: service, logger: logger}
-}
-
-func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
-	var input dto.AuthRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		h.logger.Error("failed decode request", zap.Error(err))
-		http.Error(w, "invalid json", http.StatusBadRequest)
-		return
-	}
-
-	if err := h.service.Register(r.Context(), input.Username, input.Email, input.Password); err != nil {
-		h.logger.Error("failed create user", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-}
-
-func (h *handler) ConfirmEmail(w http.ResponseWriter, r *http.Request) {
-	token := r.PathValue("token")
-
-	if token == "" {
-		h.logger.Error("invalid token", zap.String("token", token))
-		http.Error(w, "invalid token", http.StatusBadRequest)
-	}
-
-	err := h.service.ConfirmEmail(r.Context(), token)
-
-	if errors.Is(err, appErrors.ErrTokenWasExpired) {
-		h.logger.Error("token was expired", zap.Error(appErrors.ErrTokenWasExpired))
-		http.Error(w, appErrors.ErrTokenWasExpired.Error(), http.StatusGone)
-	}
-
-	if err != nil {
-		h.logger.Error("failed verify email", zap.Error(err))
-		http.Error(w, "failed verify email", http.StatusInternalServerError)
-	}
 }
 
 func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -112,28 +72,6 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("access_token")
-	if err != nil || cookie.Value == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	user, err := h.service.GetCurrentUser(r.Context(), cookie.Value)
-	if err != nil {
-		h.logger.Error("failed get current user", zap.Error(err))
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	if err = json.NewEncoder(w).Encode(userdto.ToUserResponse(user)); err != nil {
-		h.logger.Error("failed encode current user", zap.Error(err))
-	}
-}
-
 func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
 	var input dto.TokenRequest
 
@@ -167,6 +105,7 @@ func (h *handler) Refresh(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error("failed refresh access token", zap.Error(err))
 		http.Error(w, "failed refresh access token", http.StatusInternalServerError)
+		return
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -181,4 +120,69 @@ func (h *handler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
+	var input dto.AuthRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		h.logger.Error("failed decode request", zap.Error(err))
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.Register(r.Context(), input.Username, input.Email, input.Password); err != nil {
+		h.logger.Error("failed create user", zap.Error(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *handler) ConfirmEmail(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("token")
+
+	if token == "" {
+		h.logger.Error("invalid token", zap.String("token", token))
+		http.Error(w, "invalid token", http.StatusBadRequest)
+		return
+	}
+
+	err := h.service.ConfirmEmail(r.Context(), token)
+
+	if errors.Is(err, appErrors.ErrTokenWasExpired) {
+		h.logger.Error("token was expired", zap.Error(appErrors.ErrTokenWasExpired))
+		http.Error(w, appErrors.ErrTokenWasExpired.Error(), http.StatusGone)
+		return
+	}
+
+	if err != nil {
+		h.logger.Error("failed verify email", zap.Error(err))
+		http.Error(w, "failed verify email", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("access_token")
+	if err != nil || cookie.Value == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := h.service.GetCurrentUser(r.Context(), cookie.Value)
+	if err != nil {
+		h.logger.Error("failed get current user", zap.Error(err))
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err = json.NewEncoder(w).Encode(userdto.ToUserResponse(&user)); err != nil {
+		h.logger.Error("failed encode current user", zap.Error(err))
+	}
 }

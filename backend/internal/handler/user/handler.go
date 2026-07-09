@@ -12,11 +12,11 @@ import (
 	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 
-// GetUsers(w http.ResponseWriter, r *http.Request)
-// CreateUser(w http.ResponseWriter, r *http.Request)
-// GetUser(w http.ResponseWriter, r *http.Request)
-// DeleteUser(w http.ResponseWriter, r *http.Request)
-// UpdateUser(w http.ResponseWriter, r *http.Request)
+// TODO: GetUsers(w http.ResponseWriter, r *http.Request)
+// TODO: CreateUser(w http.ResponseWriter, r *http.Request)
+// TODO: GetUser(w http.ResponseWriter, r *http.Request)
+// TODO: DeleteUser(w http.ResponseWriter, r *http.Request)
+// TODO: UpdateUser(w http.ResponseWriter, r *http.Request)
 
 type Service interface {
 	CreateUser(ctx context.Context, username, email, password string) (model.User, error)
@@ -39,18 +39,20 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error("invalid id", zap.String("id", id), zap.Error(err))
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	user, err := h.service.GetById(r.Context(), userId)
 	if err != nil {
 		h.logger.Error("failed get user by id", zap.String("id", userId.String()), zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 
-	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(user)); err != nil {
+	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(&user)); err != nil {
 		h.logger.Error("failed create response with user", zap.String("email", user.Email), zap.Error(err))
 	}
 }
@@ -74,7 +76,7 @@ func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(user)); err != nil {
+	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(&user)); err != nil {
 		h.logger.Error("failed create response with user", zap.String("email", input.Email), zap.Error(err))
 	}
 }

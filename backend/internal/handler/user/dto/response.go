@@ -13,7 +13,7 @@ type UserResponse struct {
 	Email    string    `json:"email"`
 }
 
-func ToUserResponse(p model.User) UserResponse {
+func ToUserResponse(p *model.User) UserResponse {
 	resp := UserResponse{
 		UserId:   p.UserId,
 		Role:     p.Role,
