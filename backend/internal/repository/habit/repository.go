@@ -23,7 +23,7 @@ func NewRepository(pool *pgxpool.Pool, logger *zap.Logger) *repository {
 	}
 }
 
-func (r *repository) GetAllHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error) {
+func (r *repository) GetHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error) {
 	query := `
 	SELECT habit_id, name, description, is_good
 	FROM habits
@@ -59,6 +59,7 @@ func (r *repository) GetAllHabits(ctx context.Context, userId uuid.UUID) ([]mode
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
+	r.logger.Info("success get habits", zap.String("user_id", userId.String()))
 	return habits, nil
 }
 
@@ -70,10 +71,10 @@ func (r *repository) CreateHabit(ctx context.Context, habit model.Habit) error {
 
 	_, err := r.pool.Exec(ctx, query, habit.UserId, habit.HabitId, habit.Name, habit.Description, habit.IsGood)
 	if err != nil {
-		r.logger.Error("failed create habit in database", zap.Error(err))
-		return fmt.Errorf("failed create habit in database: %v", err)
+		return fmt.Errorf("failed insert habit: %w", err)
 	}
 
+	r.logger.Info("success insert habit", zap.String("user_id", habit.UserId.String()))
 	return nil
 }
 
@@ -85,10 +86,10 @@ func (r *repository) DeleteHabit(ctx context.Context, habitId uuid.UUID) error {
 
 	_, err := r.pool.Exec(ctx, query, habitId)
 	if err != nil {
-		r.logger.Error("failed delete habit from database", zap.Error(err))
-		return fmt.Errorf("failed delete habit from database: %v", err)
+		return fmt.Errorf("failed delete habit: %w", err)
 	}
 
+	r.logger.Info("success delete habit", zap.String("habit_id", habitId.String()))
 	return nil
 }
 
@@ -100,10 +101,10 @@ func (r *repository) ConfirmHabit(ctx context.Context, habitId uuid.UUID) error 
 
 	_, err := r.pool.Exec(ctx, query, habitId)
 	if err != nil {
-		r.logger.Error("failed confirm habit in database", zap.Error(err))
-		return fmt.Errorf("failed confirm habit in database: %v", err)
+		return fmt.Errorf("failed insert date: %w", err)
 	}
 
+	r.logger.Info("success insert date", zap.String("habit_id", habitId.String()))
 	return nil
 }
 
@@ -115,10 +116,10 @@ func (r *repository) CancelHabit(ctx context.Context, habitId uuid.UUID) error {
 
 	_, err := r.pool.Exec(ctx, query, habitId)
 	if err != nil {
-		r.logger.Error("failed delete date habit from database", zap.Error(err))
-		return fmt.Errorf("failed delete date habit from database: %v", err)
+		return fmt.Errorf("failed delete date: %w", err)
 	}
 
+	r.logger.Info("success delete date", zap.String("habit_id", habitId.String()))
 	return nil
 }
 
@@ -131,7 +132,7 @@ func (r *repository) GetHabitConfirmDates(ctx context.Context, habitId uuid.UUID
 
 	rows, err := r.pool.Query(ctx, query, habitId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get habit dates: %w", err)
+		return nil, fmt.Errorf("failed get dates: %w", err)
 	}
 	defer rows.Close()
 
@@ -145,7 +146,7 @@ func (r *repository) GetHabitConfirmDates(ctx context.Context, habitId uuid.UUID
 			&h.Date,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan dates: %w", err)
+			return nil, fmt.Errorf("failed scan dates: %w", err)
 		}
 
 		dates = append(dates, h)
@@ -155,5 +156,6 @@ func (r *repository) GetHabitConfirmDates(ctx context.Context, habitId uuid.UUID
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
+	r.logger.Info("success get dates", zap.String("habit_id", habitId.String()))
 	return dates, nil
 }

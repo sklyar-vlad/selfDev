@@ -34,7 +34,7 @@ func (a *adapter) SendEmailVerification(email, token string) error {
 	}
 
 	err = a.client.sendEmail(msg)
-	a.logger.Info("msg", zap.String("msg", string(msg.Html)))
+	a.logger.Info("msg", zap.String("msg", msg.Html))
 	if err != nil {
 		a.logger.Error("failed send email message", zap.Error(err))
 		return err

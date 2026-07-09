@@ -8,8 +8,8 @@ import (
 	"github.com/sklyar-vlad/selfDev/internal/config"
 )
 
-func NewPostgres(ctx context.Context, config config.ConfigDatabase) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, config.PostgresURL)
+func NewPostgres(ctx context.Context, cfg config.ConfigDatabase) (*pgxpool.Pool, error) {
+	pool, err := pgxpool.New(ctx, cfg.PostgresURL)
 	if err != nil {
 		return nil, err
 	}
