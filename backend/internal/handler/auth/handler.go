@@ -43,7 +43,7 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	refreshToken, accessToken, err := h.service.Login(r.Context(), input.Username, input.Email, input.Password)
 	if err != nil {
-		h.logger.Error("failed login", zap.Error(err))
+		h.logger.Error("failed log in", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -83,8 +83,8 @@ func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.Logout(r.Context(), input.RefreshToken)
 	if err != nil {
-		h.logger.Error("failed delete refresh token", zap.Error(err))
-		http.Error(w, "failed delete refresh token", http.StatusInternalServerError)
+		h.logger.Error("failed log out", zap.Error(err))
+		http.Error(w, "failed log out", http.StatusInternalServerError)
 		return
 	}
 
@@ -103,8 +103,8 @@ func (h *handler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	accessToken, err := h.service.Refresh(r.Context(), input.RefreshToken)
 	if err != nil {
-		h.logger.Error("failed refresh access token", zap.Error(err))
-		http.Error(w, "failed refresh access token", http.StatusInternalServerError)
+		h.logger.Error("failed refresh", zap.Error(err))
+		http.Error(w, "failed refresh", http.StatusInternalServerError)
 		return
 	}
 
@@ -132,7 +132,7 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.Register(r.Context(), input.Username, input.Email, input.Password); err != nil {
-		h.logger.Error("failed create user", zap.Error(err))
+		h.logger.Error("failed register", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -154,15 +154,18 @@ func (h *handler) ConfirmEmail(w http.ResponseWriter, r *http.Request) {
 
 	if errors.Is(err, appErrors.ErrTokenWasExpired) {
 		h.logger.Error("token was expired", zap.Error(appErrors.ErrTokenWasExpired))
-		http.Error(w, appErrors.ErrTokenWasExpired.Error(), http.StatusGone)
+		http.Error(w, appErrors.ErrTokenWasExpired.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	if err != nil {
-		h.logger.Error("failed verify email", zap.Error(err))
-		http.Error(w, "failed verify email", http.StatusInternalServerError)
+		h.logger.Error("failed confirm email", zap.Error(err))
+		http.Error(w, "failed confirm email", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +177,7 @@ func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.GetCurrentUser(r.Context(), cookie.Value)
 	if err != nil {
-		h.logger.Error("failed get current user", zap.Error(err))
+		h.logger.Error("failed get user", zap.Error(err))
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}

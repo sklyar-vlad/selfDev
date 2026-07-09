@@ -12,7 +12,7 @@ import (
 )
 
 type HabitRepository interface {
-	GetAllHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error)
+	GetHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error)
 	CreateHabit(ctx context.Context, habit model.Habit) error
 	DeleteHabit(ctx context.Context, habitId uuid.UUID) error
 	ConfirmHabit(ctx context.Context, habitId uuid.UUID) error
@@ -39,12 +39,12 @@ func NewService(repo HabitRepository, userService UserService, logger *zap.Logge
 }
 
 func (s *service) GetHabits(ctx context.Context, userId uuid.UUID) ([]model.Habit, error) {
-	habits, err := s.repo.GetAllHabits(ctx, userId)
+	habits, err := s.repo.GetHabits(ctx, userId)
 	if err != nil {
-		s.logger.Error("failed get habits by user_id", zap.Error(err))
-		return []model.Habit{}, fmt.Errorf("failed get habits by user_id: %v", err)
+		return []model.Habit{}, fmt.Errorf("failed get habits: %w", err)
 	}
 
+	s.logger.Info("success get habits", zap.String("user_id", userId.String()))
 	return habits, nil
 }
 
@@ -56,51 +56,50 @@ func (s *service) CreateHabit(
 ) (model.Habit, error) {
 	habit, err := model.NewHabit(userId, name, description, isGood)
 	if err != nil {
-		s.logger.Error("failed create model habit", zap.Error(err))
-		return model.Habit{}, fmt.Errorf("failed create model habit: %v", err)
+		return model.Habit{}, fmt.Errorf("failed create habit: %w", err)
 	}
 
 	if err = s.repo.CreateHabit(ctx, habit); err != nil {
-		s.logger.Error("failed insert habit in database", zap.Error(err))
-		return model.Habit{}, fmt.Errorf("failed insert habit in database: %v", err)
+		return model.Habit{}, fmt.Errorf("failed insert habit: %w", err)
 	}
 
+	s.logger.Info("success create habit", zap.String("habit_id", habit.HabitId.String()))
 	return habit, nil
 }
 
 func (s *service) DeleteHabit(ctx context.Context, habitId uuid.UUID) error {
 	if err := s.repo.DeleteHabit(ctx, habitId); err != nil {
-		s.logger.Error("failed delete habit from database", zap.Error(err))
-		return fmt.Errorf("failed delete habit from database: %v", err)
+		return fmt.Errorf("failed delete habit: %w", err)
 	}
 
+	s.logger.Info("success delete habit", zap.String("habit_id", habitId.String()))
 	return nil
 }
 
 func (s *service) ConfirmHabit(ctx context.Context, habitId uuid.UUID) error {
 	if err := s.repo.ConfirmHabit(ctx, habitId); err != nil {
-		s.logger.Error("failed confirm date of habit", zap.Error(err))
-		return fmt.Errorf("failed confirm date of habit: %v", err)
+		return fmt.Errorf("failed confirm date: %w", err)
 	}
 
+	s.logger.Info("success confirm date", zap.String("habit_id", habitId.String()))
 	return nil
 }
 
 func (s *service) CancelHabit(ctx context.Context, habitId uuid.UUID) error {
 	if err := s.repo.CancelHabit(ctx, habitId); err != nil {
-		s.logger.Error("failed cancel date of habit", zap.Error(err))
-		return fmt.Errorf("failed cancel date of habit: %v", err)
+		return fmt.Errorf("failed cancel date: %w", err)
 	}
 
+	s.logger.Info("success cancel date", zap.String("habit_id", habitId.String()))
 	return nil
 }
 
 func (s *service) GetHabitConfirmDates(ctx context.Context, habitId uuid.UUID) ([]model.Date, error) {
 	dates, err := s.repo.GetHabitConfirmDates(ctx, habitId)
 	if err != nil {
-		s.logger.Error("failed cancel date of habit", zap.Error(err))
-		return []model.Date{}, fmt.Errorf("failed cancel date of habit: %v", err)
+		return []model.Date{}, fmt.Errorf("failed get dates: %w", err)
 	}
 
+	s.logger.Info("success get dates", zap.String("habit_id", habitId.String()))
 	return dates, nil
 }

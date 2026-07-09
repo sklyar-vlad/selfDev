@@ -49,8 +49,8 @@ func WriteJSON(w http.ResponseWriter, status int, data any) error {
 func (h *handler) GetHabits(w http.ResponseWriter, r *http.Request) {
 	userId, err := GetID(r, "user_id")
 	if err != nil {
-		h.logger.Error("invalid user_id", zap.Error(err))
-		http.Error(w, "invalid user_id", http.StatusBadRequest)
+		h.logger.Error("invalid id", zap.Error(err))
+		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
 
@@ -62,7 +62,7 @@ func (h *handler) GetHabits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = WriteJSON(w, http.StatusOK, dto.ToHabitsResponse(habits)); err != nil {
-		h.logger.Error("failed create response with habits", zap.String("user_id", userId.String()))
+		h.logger.Error("failed create response", zap.String("user_id", userId.String()))
 	}
 }
 
@@ -87,7 +87,7 @@ func (h *handler) CreateHabit(w http.ResponseWriter, r *http.Request) {
 
 	if err = json.NewEncoder(w).Encode(dto.ToHabitResponse(habit)); err != nil {
 		h.logger.Error(
-			"failed create response with habit",
+			"failed create response",
 			zap.String("habit_id", habit.HabitId.String()),
 			zap.Error(err),
 		)
@@ -97,15 +97,15 @@ func (h *handler) CreateHabit(w http.ResponseWriter, r *http.Request) {
 func (h *handler) DeleteHabit(w http.ResponseWriter, r *http.Request) {
 	habitId, err := GetID(r, "id")
 	if err != nil {
-		h.logger.Error("invalid habit_id", zap.Error(err))
-		http.Error(w, "invalid habit_id", http.StatusBadRequest)
+		h.logger.Error("invalid id", zap.Error(err))
+		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
 
 	err = h.service.DeleteHabit(r.Context(), habitId)
 	if err != nil {
-		h.logger.Error("failed delete habits", zap.Error(err))
-		http.Error(w, "failed delete habits", http.StatusInternalServerError)
+		h.logger.Error("failed delete habit", zap.Error(err))
+		http.Error(w, "failed delete habit", http.StatusInternalServerError)
 		return
 	}
 
@@ -116,8 +116,8 @@ func (h *handler) DeleteHabit(w http.ResponseWriter, r *http.Request) {
 func (h *handler) ConfirmHabit(w http.ResponseWriter, r *http.Request) {
 	habitId, err := GetID(r, "id")
 	if err != nil {
-		h.logger.Error("invalid habit_id", zap.Error(err))
-		http.Error(w, "invalid habit_id", http.StatusBadRequest)
+		h.logger.Error("invalid id", zap.Error(err))
+		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
 
@@ -135,8 +135,8 @@ func (h *handler) ConfirmHabit(w http.ResponseWriter, r *http.Request) {
 func (h *handler) CancelHabit(w http.ResponseWriter, r *http.Request) {
 	habitId, err := GetID(r, "id")
 	if err != nil {
-		h.logger.Error("invalid habit_id", zap.Error(err))
-		http.Error(w, "invalid habit_id", http.StatusBadRequest)
+		h.logger.Error("invalid id", zap.Error(err))
+		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
 
@@ -161,12 +161,12 @@ func (h *handler) GetHabitConfirmDates(w http.ResponseWriter, r *http.Request) {
 
 	dates, err := h.service.GetHabitConfirmDates(r.Context(), habitId)
 	if err != nil {
-		h.logger.Error("failed get habits", zap.Error(err))
-		http.Error(w, "failed get habits", http.StatusInternalServerError)
+		h.logger.Error("failed get dates", zap.Error(err))
+		http.Error(w, "failed get dates", http.StatusInternalServerError)
 		return
 	}
 
 	if err = WriteJSON(w, http.StatusOK, dto.ToHabitDatesResponse(dates)); err != nil {
-		h.logger.Error("failed create response with habits", zap.String("habit_id", habitId.String()))
+		h.logger.Error("failed create response", zap.String("habit_id", habitId.String()))
 	}
 }

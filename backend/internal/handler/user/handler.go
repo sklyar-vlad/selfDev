@@ -37,14 +37,14 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	userId, err := uuid.Parse(id)
 	if err != nil {
-		h.logger.Error("invalid id", zap.String("id", id), zap.Error(err))
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.logger.Error("invalid id", zap.Error(err))
+		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
 
 	user, err := h.service.GetById(r.Context(), userId)
 	if err != nil {
-		h.logger.Error("failed get user by id", zap.String("id", userId.String()), zap.Error(err))
+		h.logger.Error("failed get user", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -53,7 +53,7 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 
 	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(&user)); err != nil {
-		h.logger.Error("failed create response with user", zap.String("email", user.Email), zap.Error(err))
+		h.logger.Error("failed create response", zap.String("email", user.Email), zap.Error(err))
 	}
 }
 
@@ -77,6 +77,6 @@ func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(&user)); err != nil {
-		h.logger.Error("failed create response with user", zap.String("email", input.Email), zap.Error(err))
+		h.logger.Error("failed create response", zap.String("email", input.Email), zap.Error(err))
 	}
 }

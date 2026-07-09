@@ -36,13 +36,13 @@ func (r *repository) CreateRefreshToken(ctx context.Context, tokens *model.Token
 	VAlUES ($1, $2, $3)	
 	`
 
-	r.logger.Info("get tokens", zap.String("refresh token", tokens.RefreshToken))
 	_, err := r.pool.Exec(ctx, query, tokens.RefreshToken, tokens.UserId, tokens.ExpiresAt)
 	if err != nil {
 		r.logger.Error("failed insert refresh token in database", zap.Error(err))
 		return fmt.Errorf("failed insert refresh token in database: %v", err)
 	}
 
+	r.logger.Info("success create refresh token", zap.String("user_id", tokens.UserId.String()))
 	return nil
 }
 
@@ -63,17 +63,14 @@ func (r *repository) GetRefreshToken(ctx context.Context, userId uuid.UUID) (mod
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		r.logger.Error("user not found", zap.Error(appErrors.ErrUserNotFound))
 		return model.Tokens{}, appErrors.ErrUserNotFound
 	}
 
 	if err != nil {
-		r.logger.Error("failed get refresh token by user id", zap.Error(err))
-		return model.Tokens{}, err
+		return model.Tokens{}, fmt.Errorf("failed get refresh token: %w", err)
 	}
 
-	r.logger.Info("success select token by user_id", zap.String("refresh token", refreshToken.RefreshToken))
-
+	r.logger.Info("success create refresh token", zap.String("user_id", userId.String()))
 	return refreshToken, nil
 }
 
@@ -85,10 +82,10 @@ func (r *repository) DeleteRefreshToken(ctx context.Context, userId uuid.UUID) e
 
 	_, err := r.pool.Exec(ctx, query, userId)
 	if err != nil {
-		r.logger.Error("failed delete refresh token", zap.Error(err))
 		return fmt.Errorf("failed delete refresh token: %v", err)
 	}
 
+	r.logger.Info("success delete refresh token", zap.String("user_id", userId.String()))
 	return nil
 }
 
@@ -102,10 +99,9 @@ func (r *repository) ConsumeToken(ctx context.Context, token string) (string, er
 
 	userID, err := r.redis.Get(ctx, key).Result()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("faileg consume token: %w", err)
 	}
 
 	_ = r.redis.Del(ctx, key)
-
 	return userID, nil
 }

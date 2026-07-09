@@ -45,12 +45,10 @@ func (r *repository) Create(ctx context.Context, user *model.User) error {
 		user.Password,
 	)
 	if err != nil {
-		r.logger.Error("failed insert user in database", zap.Error(err))
 		return mapDBError(err)
 	}
 
-	r.logger.Info("success insert user in database", zap.String("email", user.Email))
-
+	r.logger.Info("success insert user", zap.String("email", user.Email))
 	return nil
 }
 
@@ -77,12 +75,10 @@ func (r *repository) Update(ctx context.Context, user *model.User) error {
 		user.Password,
 	)
 	if err != nil {
-		r.logger.Error("failed update user in database", zap.Error(err))
-		return fmt.Errorf("failed update user in database: %v", err)
+		return fmt.Errorf("failed update user in database: %w", err)
 	}
 
-	r.logger.Info("success update user in database", zap.String("email", user.Email))
-
+	r.logger.Info("success update user", zap.String("email", user.Email))
 	return nil
 }
 
@@ -106,15 +102,14 @@ func (r *repository) GetByLogin(ctx context.Context, login string) (model.User, 
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		r.logger.Error("user not found", zap.Error(err))
 		return model.User{}, appErrors.ErrUserNotFound
 	}
 
 	if err != nil {
-		r.logger.Error("failed get user from database", zap.Error(err))
-		return model.User{}, fmt.Errorf("failed get user from database: %v", err)
+		return model.User{}, fmt.Errorf("failed get user from database: %w", err)
 	}
 
+	r.logger.Info("success get user", zap.String("email", user.Email))
 	return user, nil
 }
 
@@ -137,15 +132,14 @@ func (r *repository) GetById(ctx context.Context, userId uuid.UUID) (model.User,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		r.logger.Error("user not found", zap.Error(err))
 		return model.User{}, appErrors.ErrUserNotFound
 	}
 
 	if err != nil {
-		r.logger.Error("failed get user from database", zap.Error(err))
-		return model.User{}, fmt.Errorf("failed get user from database: %v", err)
+		return model.User{}, fmt.Errorf("failed get user: %w", err)
 	}
 
+	r.logger.Info("success get user", zap.String("email", user.Email))
 	return user, nil
 }
 

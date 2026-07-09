@@ -34,32 +34,28 @@ func NewService(repo Repository, logger *zap.Logger) *Service {
 func (s *Service) CreateUser(ctx context.Context, username, email, password string) (model.User, error) {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		s.logger.Error("failed password hash generation", zap.String("email", email), zap.Error(err))
-		return model.User{}, fmt.Errorf("failed password hash generation: %v", err)
+		return model.User{}, fmt.Errorf("failed generation password hash: %w", err)
 	}
 
 	user, err := model.NewUser(username, email, string(passwordHash))
 
 	if errors.Is(err, appErrors.ErrInvalidEmail) {
-		s.logger.Error("invalid email", zap.Error(err))
 		return model.User{}, appErrors.ErrInvalidEmail
 	}
 
 	if errors.Is(err, appErrors.ErrInvalidPassword) {
-		s.logger.Error("invalid password", zap.Error(err))
 		return model.User{}, appErrors.ErrInvalidPassword
 	}
 
 	if err != nil {
-		s.logger.Error("failed create user model", zap.String("email", email), zap.Error(err))
-		return model.User{}, fmt.Errorf("failed create user model: %v", err)
+		return model.User{}, fmt.Errorf("failed create user model: %w", err)
 	}
 
 	if err = s.repo.Create(ctx, &user); err != nil {
-		s.logger.Error("failed insert user", zap.String("email", email), zap.Error(err))
-		return model.User{}, fmt.Errorf("failed insert user: %v", err)
+		return model.User{}, fmt.Errorf("failed insert user: %w", err)
 	}
 
+	s.logger.Info("success create user", zap.String("email", email))
 	return user, nil
 }
 
@@ -68,6 +64,7 @@ func (s *Service) UpdateUser(ctx context.Context, user *model.User) error {
 		return err
 	}
 
+	s.logger.Info("success update user", zap.String("user_id", user.UserId.String()))
 	return nil
 }
 
@@ -82,15 +79,14 @@ func (s *Service) GetByLogin(ctx context.Context, username, email string) (model
 	user, err := s.repo.GetByLogin(ctx, login)
 
 	if errors.Is(err, appErrors.ErrUserNotFound) {
-		s.logger.Error("user not found", zap.Error(err))
 		return model.User{}, appErrors.ErrUserNotFound
 	}
 
 	if err != nil {
-		s.logger.Error("failed get user", zap.String("email/username", login), zap.Error(err))
-		return model.User{}, fmt.Errorf("failed get user: %v", err)
+		return model.User{}, fmt.Errorf("failed get user: %w", err)
 	}
 
+	s.logger.Info("success get user", zap.String("email", email))
 	return user, nil
 }
 
@@ -98,14 +94,13 @@ func (s *Service) GetById(ctx context.Context, userId uuid.UUID) (model.User, er
 	user, err := s.repo.GetById(ctx, userId)
 
 	if errors.Is(err, appErrors.ErrUserNotFound) {
-		s.logger.Error("user not found", zap.Error(err))
 		return model.User{}, appErrors.ErrUserNotFound
 	}
 
 	if err != nil {
-		s.logger.Error("failed get user", zap.String("id", userId.String()), zap.Error(err))
-		return model.User{}, fmt.Errorf("failed get user: %v", err)
+		return model.User{}, fmt.Errorf("failed get user: %w", err)
 	}
 
+	s.logger.Info("success get user", zap.String("user_id", userId.String()))
 	return user, nil
 }
