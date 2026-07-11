@@ -87,22 +87,6 @@ services:
     networks:
       - self-dev
 
-  # mysql:
-  #   image: mysql:8.4
-  #   restart: unless-stopped
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: 123456
-  #     MYSQL_DATABASE: casdoor
-  #   volumes:
-  #     - casdoor-mysql:/var/lib/mysql
-  #   networks:
-  #     - self-dev
-  #   healthcheck:
-  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 20
-
 volumes:
   self-dev:
     name: "self-dev-volume"
