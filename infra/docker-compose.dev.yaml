@@ -44,7 +44,7 @@ services:
       - self-dev
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`self-dev.test`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.rule=Host(`api.self-dev.test`)"
       - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=8080"
     depends_on:
