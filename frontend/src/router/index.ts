@@ -8,21 +8,6 @@ import VerifyEmailPage from '@/views/VerifyEmailPage.vue'
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/login',
-    name: 'Login',
-    component: LoginPage,
-  },
-  {
-    path: '/register',
-    name: 'Register',
-    component: RegisterPage,
-  },
-  {
-    path: '/verify-email/:token',
-    name: 'VerifyEmail',
-    component: VerifyEmailPage,
-  },
-  {
     path: '/me/profile',
     name: 'Dashboard',
     component: Dashboard,

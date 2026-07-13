@@ -121,8 +121,8 @@
 import LandingHeader from '@/components/Header/LandingHeader.vue'
 
 const casdoorLogin = () => {
-  const clientId = '6ce06ba92f2d5e3e2e17'
-  const redirectUri = 'http://self-dev.test/auth/callback'
+  const clientId = '84ff2ce323d6584b9574'
+  const redirectUri = 'https://self-dev.tech/auth/callback'
 
   const url =
     `http://auth.self-dev.test/login/oauth/authorize` +
