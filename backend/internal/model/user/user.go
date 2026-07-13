@@ -6,6 +6,7 @@ import (
 
 type User struct {
 	UserId        uuid.UUID
+	Sub			  string
 	Username      string
 	Email         string
 }

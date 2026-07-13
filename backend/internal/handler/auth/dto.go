@@ -20,7 +20,6 @@ type AuthResponse struct {
 func ToAuthResponse(p *model.User) AuthResponse {
 	resp := AuthResponse{
 		UserId:   p.UserId,
-		Role:     p.Role,
 		Username: p.Username,
 		Email:    p.Email,
 	}

@@ -2,17 +2,10 @@ package user
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
-	appErrors "github.com/sklyar-vlad/selfDev/internal/errors"
 	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 
@@ -30,131 +23,23 @@ func NewRepository(pool *pgxpool.Pool, logger *zap.Logger) *repository {
 
 func (r *repository) Create(ctx context.Context, user *model.User) error {
 	query := `
-	INSERT INTO users (user_id, role, username, email, email_verified, password)
-	VALUES ($1, $2, $3,	$4, $5, $6)
+	INSERT INTO users (user_id, sub, username, email)
+	VALUES ($1, $2, $3,	$4)
 	`
 
 	_, err := r.pool.Exec(
 		ctx,
 		query,
 		user.UserId,
-		user.Role,
+		user.Sub,
 		user.Username,
 		user.Email,
-		user.EmailVerified,
-		user.Password,
 	)
+
 	if err != nil {
-		return mapDBError(err)
+		return err
 	}
 
 	r.logger.Info("success insert user", zap.String("email", user.Email))
 	return nil
-}
-
-func (r *repository) Update(ctx context.Context, user *model.User) error {
-	query := `
-	UPDATE users
-	SET 
-		role = $2,
-		username = $3,
-		email = $4,
-		email_verified = $5,
-		password = $6
-	WHERE user_id = $1
-	`
-
-	_, err := r.pool.Exec(
-		ctx,
-		query,
-		user.UserId,
-		user.Role,
-		user.Username,
-		user.Email,
-		user.EmailVerified,
-		user.Password,
-	)
-	if err != nil {
-		return fmt.Errorf("failed update user in database: %w", err)
-	}
-
-	r.logger.Info("success update user", zap.String("email", user.Email))
-	return nil
-}
-
-func (r *repository) GetByLogin(ctx context.Context, login string) (model.User, error) {
-	query := `
-	SELECT user_id, role, username, email, email_verified, password
-	FROM users
-	WHERE email = $1 or username = $1
-	LIMIT 1
-	`
-
-	var user model.User
-
-	err := r.pool.QueryRow(ctx, query, login).Scan(
-		&user.UserId,
-		&user.Role,
-		&user.Username,
-		&user.Email,
-		&user.EmailVerified,
-		&user.Password,
-	)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return model.User{}, appErrors.ErrUserNotFound
-	}
-
-	if err != nil {
-		return model.User{}, fmt.Errorf("failed get user from database: %w", err)
-	}
-
-	r.logger.Info("success get user", zap.String("email", user.Email))
-	return user, nil
-}
-
-func (r *repository) GetById(ctx context.Context, userId uuid.UUID) (model.User, error) {
-	query := `
-	SELECT user_id, role, username, email, email_verified, password
-	FROM users
-	WHERE user_id = $1
-	LIMIT 1
-	`
-	var user model.User
-
-	err := r.pool.QueryRow(ctx, query, userId).Scan(
-		&user.UserId,
-		&user.Role,
-		&user.Username,
-		&user.Email,
-		&user.EmailVerified,
-		&user.Password,
-	)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return model.User{}, appErrors.ErrUserNotFound
-	}
-
-	if err != nil {
-		return model.User{}, fmt.Errorf("failed get user: %w", err)
-	}
-
-	r.logger.Info("success get user", zap.String("email", user.Email))
-	return user, nil
-}
-
-func mapDBError(err error) error {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		if pgErr.Code == pgerrcode.UniqueViolation {
-			switch pgErr.ConstraintName {
-			case "users_email_key":
-				return appErrors.ErrEmailAlreadyExists
-			case "users_username_key":
-				return appErrors.ErrUsernameAlreadyExists
-			}
-		}
-	}
-
-	return fmt.Errorf("database error: %w", err)
 }
