@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 	"go.uber.org/zap"
+
+	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 
 // TODO: Update(ctx context.Context, user model.User) (model.User, error)
 // TODO: Delete(ctx context.Context, user model.User) error
 type Repository interface {
 	Create(ctx context.Context, user *model.User) error
-	GetByID(ctx context.Context, userSub string) (model.User, error)
+	GetBySub(ctx context.Context, userSub string) (model.User, error)
 	// Update(ctx context.Context, user *model.User) error
 	// GetByLogin(ctx context.Context, login string) (model.User, error)
 }
@@ -34,8 +35,8 @@ func (s *Service) CreateUser(ctx context.Context, user model.User) (model.User, 
 	return user, nil
 }
 
-func (s *Service) GetUserByID(ctx context.Context, userSub string) (model.User, error) {
-	user, err := s.repo.GetByID(ctx, userSub)
+func (s *Service) GetUserBySub(ctx context.Context, userSub string) (model.User, error) {
+	user, err := s.repo.GetBySub(ctx, userSub)
 	if err != nil {
 		return model.User{}, err
 	}

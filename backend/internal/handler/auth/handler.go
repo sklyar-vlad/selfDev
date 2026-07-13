@@ -2,20 +2,13 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
-	"github.com/google/uuid"
-	auth "github.com/sklyar-vlad/selfDev/internal/integrations/casdoor"
-	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 	"go.uber.org/zap"
 )
 
 type AuthService interface {
-	Auth(code, state string) (string, error)
-	GetUserInfo(sub string) (auth.AuthUser, error)
-	FindOrCreate(ctx context.Context, user auth.AuthUser) (model.User, error)
-	CreateSession(ctx context.Context, userId uuid.UUID) (string, error)
+	Login(ctx context.Context, code string) (string, error)
 }
 
 type handler struct {
@@ -28,38 +21,29 @@ func NewHandler(service AuthService, logger *zap.Logger) *handler {
 }
 
 func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
-	var input AuthRequest
+	code := r.URL.Query().Get("code")
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		h.logger.Error("failed decode request", zap.Error(err))
-		http.Error(w, "invalid json", http.StatusBadRequest)
+	if code == "" {
+		http.Error(w, "missing code", http.StatusBadRequest)
 		return
 	}
 
-	// if input.State != r.oauth2.State {
-	// 	h.logger.Error("invalid oauth state")
-	// 	http.Error(w, "invalid oauth state", http.StatusBadRequest)
-	//	return
-	// }
-
-	accessToken, err := h.service.Auth(input.Code, input.State)
+	session, err := h.service.Login(r.Context(), code)
 	if err != nil {
-		h.logger.Error("failed auth", zap.Error(err))
+		h.logger.Error("failed login", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	authUser, err := h.service.GetUserInfo(accessToken)
-	user, err := h.service.FindOrCreate(r.Context(), authUser)
-	sessionID, err := h.service.CreateSession(r.Context(), user.UserId)
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
-		Value:    sessionID,
+		Value:    session,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		MaxAge:   30 * 24 * 3600,
 	})
+
+	http.Redirect(w, r, "https://tracker.self-dev.tech/me/dashboard", http.StatusFound)
 }

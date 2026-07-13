@@ -38,7 +38,6 @@ func (r *repository) Create(ctx context.Context, user *model.User) error {
 		user.Username,
 		user.Email,
 	)
-
 	if err != nil {
 		return err
 	}
@@ -47,7 +46,7 @@ func (r *repository) Create(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (r *repository) GetByID(ctx context.Context, sub string) (model.User, error) {
+func (r *repository) GetBySub(ctx context.Context, sub string) (model.User, error) {
 	query := `
 	SELECT user_id, sub, username, email
 	FROM users

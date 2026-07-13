@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	model "github.com/sklyar-vlad/selfDev/internal/model/habit"
-	userModel "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 
 type HabitRepository interface {
@@ -21,7 +20,7 @@ type HabitRepository interface {
 }
 
 type UserService interface {
-	GetById(ctx context.Context, id uuid.UUID) (userModel.User, error)
+	// GetById(ctx context.Context, id uuid.UUID) (userModel.User, error)
 }
 
 type service struct {

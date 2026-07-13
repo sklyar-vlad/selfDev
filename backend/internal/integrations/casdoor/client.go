@@ -23,12 +23,7 @@ func (c *client) getAccess(code, state string) (string, error) {
 }
 
 func (c *client) getUserInfo(token string) (AuthUser, error) {
-	request, err := http.NewRequest(
-		"GET",
-		"http://auth.self-dev.test/api/userinfo",
-		nil,
-	)
-
+	request, err := http.NewRequest(http.MethodGet, "http://auth.self-dev.test/api/userinfo", http.NoBody)
 	if err != nil {
 		return AuthUser{}, err
 	}
@@ -39,7 +34,6 @@ func (c *client) getUserInfo(token string) (AuthUser, error) {
 	)
 
 	response, err := http.DefaultClient.Do(request)
-
 	if err != nil {
 		return AuthUser{}, err
 	}
@@ -48,7 +42,6 @@ func (c *client) getUserInfo(token string) (AuthUser, error) {
 	var user AuthUser
 
 	err = json.NewDecoder(response.Body).Decode(&user)
-
 	if err != nil {
 		return AuthUser{}, err
 	}

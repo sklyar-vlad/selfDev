@@ -2,13 +2,9 @@ package user
 
 import (
 	"context"
-	// "encoding/json"
-	// "net/http"
 
-	// "github.com/google/uuid"
 	"go.uber.org/zap"
 
-	// "github.com/sklyar-vlad/selfDev/internal/handler/user/dto"
 	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 

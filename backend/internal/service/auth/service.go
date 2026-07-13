@@ -5,15 +5,16 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
+
 	"github.com/sklyar-vlad/selfDev/internal/config"
 	appErrors "github.com/sklyar-vlad/selfDev/internal/errors"
 	auth "github.com/sklyar-vlad/selfDev/internal/integrations/casdoor"
-	"github.com/sklyar-vlad/selfDev/internal/model/user"
-	"go.uber.org/zap"
+	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 
 type UserService interface {
-	GetUserByID(ctx context.Context, userSub string) (model.User, error)
+	GetUserBySub(ctx context.Context, userSub string) (model.User, error)
 	CreateUser(ctx context.Context, user model.User) (model.User, error)
 }
 
@@ -44,38 +45,31 @@ func NewService(
 	return &Service{userService: userService, authAdapter: authAdapter, repo: repo, cfg: configJwt, logger: logger}
 }
 
-func (s *Service) Auth(code, state string) (string, error) {
-	return s.authAdapter.GetAccess(code, state)
-}
-
-func (s *Service) GetUserInfo(token string) (auth.AuthUser, error) {
-	return s.authAdapter.GetUserInfo(token)
-}
-
-func (s *Service) FindOrCreate(ctx context.Context, authUser auth.AuthUser) (model.User, error) {
-	user, err := s.userService.GetUserByID(ctx, authUser.Sub)
-
+func (s *Service) Login(ctx context.Context, code string) (string, error) {
+	access, err := s.authAdapter.GetAccess(code, "")
 	if err != nil {
-		return model.User{}, err
+		return "", err
 	}
 
-	if errors.Is(err, appErrors.ErrUserNotFound) {
-		user, err = s.userService.CreateUser(ctx, model.NewUser(authUser.Sub, authUser.Name, authUser.Email))
+	authUser, err := s.authAdapter.GetUserInfo(access)
+	if err != nil {
+		return "", err
+	}
 
-		if err != nil {
-			return model.User{}, err
+	user, err := s.userService.GetUserBySub(ctx, authUser.Sub)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
+			user, err = s.userService.CreateUser(ctx, model.NewUser(authUser.Sub, authUser.Name, authUser.Email))
+			if err != nil {
+				return "", err
+			}
 		}
 
+		return "", err
 	}
 
-	return user, nil
-}
-
-func (s *Service) CreateSession(ctx context.Context, userID uuid.UUID) (string, error) {
 	sessionID := uuid.NewString()
-
-	err := s.repo.CreateSession(ctx, sessionID, userID)
-
+	err = s.repo.CreateSession(ctx, sessionID, user.UserId)
 	if err != nil {
 		return "", err
 	}
