@@ -2,13 +2,9 @@ package user
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/sklyar-vlad/selfDev/internal/handler/user/dto"
 	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 
@@ -19,9 +15,9 @@ import (
 // TODO: UpdateUser(w http.ResponseWriter, r *http.Request)
 
 type Service interface {
-	CreateUser(ctx context.Context, username, email, password string) (model.User, error)
-	GetByLogin(ctx context.Context, username, email string) (model.User, error)
-	GetById(ctx context.Context, userId uuid.UUID) (model.User, error)
+	CreateUser(ctx context.Context, user model.User) (model.User, error)
+	// GetByLogin(ctx context.Context, username, email string) (model.User, error)
+	// GetById(ctx context.Context, userId uuid.UUID) (model.User, error)
 }
 
 type handler struct {
@@ -33,50 +29,50 @@ func NewHandler(service Service, logger *zap.Logger) *handler {
 	return &handler{service: service, logger: logger}
 }
 
-func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	userId, err := uuid.Parse(id)
-	if err != nil {
-		h.logger.Error("invalid id", zap.Error(err))
-		http.Error(w, "invalid id", http.StatusBadRequest)
-		return
-	}
+// func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
+// 	id := r.PathValue("id")
+// 	userId, err := uuid.Parse(id)
+// 	if err != nil {
+// 		h.logger.Error("invalid id", zap.Error(err))
+// 		http.Error(w, "invalid id", http.StatusBadRequest)
+// 		return
+// 	}
 
-	user, err := h.service.GetById(r.Context(), userId)
-	if err != nil {
-		h.logger.Error("failed get user", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+// 	user, err := h.service.GetById(r.Context(), userId)
+// 	if err != nil {
+// 		h.logger.Error("failed get user", zap.Error(err))
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusAccepted)
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusAccepted)
 
-	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(&user)); err != nil {
-		h.logger.Error("failed create response", zap.String("email", user.Email), zap.Error(err))
-	}
-}
+// 	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(&user)); err != nil {
+// 		h.logger.Error("failed create response", zap.String("email", user.Email), zap.Error(err))
+// 	}
+// }
 
-func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var input dto.UserRequest
+// func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
+// 	var input dto.UserRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		h.logger.Error("failed decode request", zap.Error(err))
-		http.Error(w, "invalid json", http.StatusBadRequest)
-		return
-	}
+// 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+// 		h.logger.Error("failed decode request", zap.Error(err))
+// 		http.Error(w, "invalid json", http.StatusBadRequest)
+// 		return
+// 	}
 
-	user, err := h.service.CreateUser(r.Context(), input.Username, input.Email, input.Password)
-	if err != nil {
-		h.logger.Error("failed create user", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+// 	user, err := h.service.CreateUser(r.Context(), input.Username, input.Email, input.Password)
+// 	if err != nil {
+// 		h.logger.Error("failed create user", zap.Error(err))
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusCreated)
 
-	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(&user)); err != nil {
-		h.logger.Error("failed create response", zap.String("email", input.Email), zap.Error(err))
-	}
-}
+// 	if err = json.NewEncoder(w).Encode(dto.ToUserResponse(&user)); err != nil {
+// 		h.logger.Error("failed create response", zap.String("email", input.Email), zap.Error(err))
+// 	}
+// }

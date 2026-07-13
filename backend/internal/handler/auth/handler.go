@@ -1,26 +1,14 @@
-package user
+package auth
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"net/http"
 
 	"go.uber.org/zap"
-
-	appErrors "github.com/sklyar-vlad/selfDev/internal/errors"
-	"github.com/sklyar-vlad/selfDev/internal/handler/auth/dto"
-	userdto "github.com/sklyar-vlad/selfDev/internal/handler/user/dto"
-	userModel "github.com/sklyar-vlad/selfDev/internal/model/user"
 )
 
 type AuthService interface {
-	Login(ctx context.Context, username, email, password string) (string, string, error)
-	Logout(ctx context.Context, refreshToken string) error
-	Refresh(ctx context.Context, refreshToken string) (string, error)
-	Register(ctx context.Context, username, email, password string) error
-	ConfirmEmail(ctx context.Context, token string) error
-	GetCurrentUser(ctx context.Context, accessToken string) (userModel.User, error)
+	Login(ctx context.Context, code string) (string, error)
 }
 
 type handler struct {
@@ -32,160 +20,30 @@ func NewHandler(service AuthService, logger *zap.Logger) *handler {
 	return &handler{service: service, logger: logger}
 }
 
-func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
-	var input dto.AuthRequest
+func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		h.logger.Error("failed decode request", zap.Error(err))
-		http.Error(w, "invalid json", http.StatusBadRequest)
+	if code == "" {
+		http.Error(w, "missing code", http.StatusBadRequest)
 		return
 	}
 
-	refreshToken, accessToken, err := h.service.Login(r.Context(), input.Username, input.Email, input.Password)
+	session, err := h.service.Login(r.Context(), code)
 	if err != nil {
-		h.logger.Error("failed log in", zap.Error(err))
+		h.logger.Error("failed login", zap.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    accessToken,
+		Name:     "session",
+		Value:    session,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   12 * 60 * 60,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   30 * 24 * 3600,
 	})
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   30 * 24 * 60 * 60,
-	})
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-}
-
-func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
-	var input dto.TokenRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		h.logger.Error("failed decode request", zap.Error(err))
-		http.Error(w, "invalid json", http.StatusBadRequest)
-		return
-	}
-
-	err := h.service.Logout(r.Context(), input.RefreshToken)
-	if err != nil {
-		h.logger.Error("failed log out", zap.Error(err))
-		http.Error(w, "failed log out", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *handler) Refresh(w http.ResponseWriter, r *http.Request) {
-	var input dto.TokenRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		h.logger.Error("failed decode request", zap.Error(err))
-		http.Error(w, "invalid json", http.StatusBadRequest)
-		return
-	}
-
-	accessToken, err := h.service.Refresh(r.Context(), input.RefreshToken)
-	if err != nil {
-		h.logger.Error("failed refresh", zap.Error(err))
-		http.Error(w, "failed refresh", http.StatusInternalServerError)
-		return
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    accessToken,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   12 * 60 * 60,
-	})
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-}
-
-func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
-	var input dto.AuthRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		h.logger.Error("failed decode request", zap.Error(err))
-		http.Error(w, "invalid json", http.StatusBadRequest)
-		return
-	}
-
-	if err := h.service.Register(r.Context(), input.Username, input.Email, input.Password); err != nil {
-		h.logger.Error("failed register", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-}
-
-func (h *handler) ConfirmEmail(w http.ResponseWriter, r *http.Request) {
-	token := r.PathValue("token")
-
-	if token == "" {
-		h.logger.Error("invalid token", zap.String("token", token))
-		http.Error(w, "invalid token", http.StatusBadRequest)
-		return
-	}
-
-	err := h.service.ConfirmEmail(r.Context(), token)
-
-	if errors.Is(err, appErrors.ErrTokenWasExpired) {
-		h.logger.Error("token was expired", zap.Error(appErrors.ErrTokenWasExpired))
-		http.Error(w, appErrors.ErrTokenWasExpired.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	if err != nil {
-		h.logger.Error("failed confirm email", zap.Error(err))
-		http.Error(w, "failed confirm email", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusAccepted)
-}
-
-func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("access_token")
-	if err != nil || cookie.Value == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	user, err := h.service.GetCurrentUser(r.Context(), cookie.Value)
-	if err != nil {
-		h.logger.Error("failed get user", zap.Error(err))
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	if err = json.NewEncoder(w).Encode(userdto.ToUserResponse(&user)); err != nil {
-		h.logger.Error("failed encode current user", zap.Error(err))
-	}
+	http.Redirect(w, r, "https://tracker.self-dev.tech/me/dashboard", http.StatusFound)
 }

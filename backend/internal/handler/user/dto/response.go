@@ -16,7 +16,6 @@ type UserResponse struct {
 func ToUserResponse(p *model.User) UserResponse {
 	resp := UserResponse{
 		UserId:   p.UserId,
-		Role:     p.Role,
 		Username: p.Username,
 		Email:    p.Email,
 	}

@@ -1,72 +1,97 @@
+name: self-dev
+
 services:
-  backend:
-    image: self-dev-backend
-    container_name: self-dev-backend
+  traefik:
+    image: traefik:v3.7
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - self-dev
-    ports:
-      - "8080:8080"
+
+  auth:
+    image: casbin/casdoor:latest
+    restart: unless-stopped
+    environment:
+      - GIN_MODE=release
+    volumes:
+      - "./conf:/conf"
+      - "./logs:/logs"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`auth.self-dev.test`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8000"
+    networks:
+      - self-dev
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.backend
+    networks:
+      - self-dev
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.self-dev.test`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
     depends_on:
       db:
         condition: service_healthy
 
   frontend:
-    image: self-dev-frontend
-    container_name: self-dev-frontend
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.frontend
     networks:
       - self-dev
-    ports:
-      - "80:80"
-      - "443:443"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`self-dev.test`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
   db:
     image: postgres:18-alpine
-    container_name: self-dev-db
     networks:
       - self-dev
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
       - "self-dev:/var/lib/postgresql"
+      - "./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro"
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d self-dev"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  db-panel:
-    image: dbeaver/cloudbeaver:latest
-    container_name: self-dev-db-panel
-    networks:
-      - self-dev
-    ports:
-      - "8978:8978"
-    volumes:
-      - "self-dev-dbeaver:/opt/cloudbeaver/workspace"
-    depends_on:
-      db:
-        condition: service_healthy
-
   redis:
     image: redis:8-alpine
-    container_name: self-dev-redis
     networks:
       - self-dev
 
 volumes:
   self-dev:
     name: "self-dev-volume"
-  self-dev-dbeaver:
-    name: "self-dev-dbeaver-volume"
 
 networks:
   self-dev:
     name: "self-dev-network"
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.30.0.0/16

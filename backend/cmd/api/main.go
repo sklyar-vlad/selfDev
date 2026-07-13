@@ -17,7 +17,7 @@ import (
 	authHand "github.com/sklyar-vlad/selfDev/internal/handler/auth"
 	habitHand "github.com/sklyar-vlad/selfDev/internal/handler/habit"
 	userHand "github.com/sklyar-vlad/selfDev/internal/handler/user"
-	emailAdapt "github.com/sklyar-vlad/selfDev/internal/integrations/resend"
+	authAdapt "github.com/sklyar-vlad/selfDev/internal/integrations/casdoor"
 	authRepo "github.com/sklyar-vlad/selfDev/internal/repository/auth"
 	habitRepo "github.com/sklyar-vlad/selfDev/internal/repository/habit"
 	userRepo "github.com/sklyar-vlad/selfDev/internal/repository/user"
@@ -59,24 +59,27 @@ func main() {
 		_ = redis.Close()
 	}()
 
-	authRepository := authRepo.NewRepository(pool, redis, logger)
 	userRepository := userRepo.NewRepository(pool, logger)
 	habitRepository := habitRepo.NewRepository(pool, logger)
+	authRepository := authRepo.NewRepository(pool, redis, logger)
 
-	emailAdapter := emailAdapt.NewAdapter(cfg.EmailSender, logger)
+	authAdapter := authAdapt.NewAdapter(cfg.Auth)
 
 	userService := userSrv.NewService(userRepository, logger)
-	authService := authSrv.NewService(authRepository, userService, emailAdapter, cfg.JWT, logger)
+	authService := authSrv.NewService(userService, authAdapter, authRepository, cfg.JWT, logger)
 	habitService := habitSrv.NewService(habitRepository, userService, logger)
 
 	authHandler := authHand.NewHandler(authService, logger)
 	userHandler := userHand.NewHandler(userService, logger)
 	habitHandler := habitHand.NewHandler(habitService, logger)
 
-	mux := http.NewServeMux()
-	handler.RegisterRoutes(mux, userHandler, authHandler, habitHandler)
-	wrapped := middleware.CORS(mux, cfg.Server.Middleware)
-
+	rootMux := http.NewServeMux()
+	handler.RegisterPublicRoutes(rootMux, authHandler)
+	protectedMux := http.NewServeMux()
+	handler.RegisterProtectedRoutes(protectedMux, userHandler, habitHandler)
+	sessionMiddleware := middleware.NewSessionMiddleware(authRepository)
+	rootMux.Handle("/api/", sessionMiddleware.Middleware(protectedMux))
+	wrapped := middleware.CORS(rootMux, cfg.Server.Middleware)
 	service := &http.Server{
 		Addr:         ":8080",
 		Handler:      wrapped,

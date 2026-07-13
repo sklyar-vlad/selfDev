@@ -6,49 +6,30 @@ tasks:
       - task --list
     silent: true
 
-### BUILD DEV
+### BUILD
 
-  dev-build-backend:
+  build-backend:
     desc: build backend side for develope
     cmds:
       - docker build -t self-dev-backend -f infra/Dockerfile.backend.dev .
 
-  dev-build-frontend:
+  build-frontend:
     desc: build frontend side for develope
     cmds:
       - docker build -t self-dev-frontend -f infra/Dockerfile.frontend.dev .
 
-  dev-build:
+  build:
     desc: build backend and frontend for develope
     cmds:
       - task dev-build-backend
       - task dev-build-frontend
-
-### BUILD PROD
-
-  prod-build-backend:
-    desc: build backend side for production
-    cmds:
-      - docker build -t self-dev-backend -f infra/Dockerfile.backend.prod .
-  
-  prod-build-frontend:
-    desc: build frontend side for production
-    cmds:
-      - docker build -t self-dev-frontend -f infra/Dockerfile.frontend.prod .
-
-  prod-build:
-    desc: build backend and frontend for production
-    cmds:
-      - task prod-build-backend
-      - task prod-build-frontend
 
 ### COMPOSE (DEV)
 
   dev-up:
     desc: start all containers for develope with open backend ports and database
     cmds:
-      - task dev-build
-      - docker compose -f ./infra/docker-compose.dev.yaml up -d
+      - docker compose -f ./infra/docker-compose.dev.yaml up -d --build
 
   dev-down:
     desc: stop all containers 
@@ -60,7 +41,6 @@ tasks:
   prod-up:
     desc: start all containers for production 
     cmds:
-      - task prod-build
       - docker compose -f ./infra/docker-compose.prod.yaml up -d
 
   prod-down:
@@ -108,6 +88,11 @@ tasks:
       - goose down -env ./infra/.env
 
 ### LOGS
+
+  logs:
+    desc: check logs in real time of all containers
+    cmds:
+      - docker compose -f ./infra/docker-compose.dev.yaml logs -f 
 
   logs-backend:
     desc: check logs in real time in backend container

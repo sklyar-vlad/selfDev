@@ -14,7 +14,9 @@
         </p>
 
         <div class="hero-actions">
-          <RouterLink to="/register" class="btn btn-primary">Create account</RouterLink>
+            <button @click="casdoorLogin" class="btn btn-primary">
+              Create account
+            </button>
         </div>
       </div>
 
@@ -106,7 +108,9 @@
         </p>
 
         <div class="hero-actions">
-          <RouterLink to="/register" class="btn btn-primary">Create account</RouterLink>
+          <button @click="casdoorLogin" class="btn btn-primary">
+            Create account
+          </button>
         </div>
       </div>
     </section>
@@ -115,6 +119,20 @@
 
 <script setup lang="ts">
 import LandingHeader from '@/components/Header/LandingHeader.vue'
+
+const casdoorLogin = () => {
+  const clientId = '6ce06ba92f2d5e3e2e17'
+  const redirectUri = 'http://self-dev.test/auth/callback'
+
+  const url =
+    `http://auth.self-dev.test/login/oauth/authorize` +
+    `?client_id=${clientId}` +
+    `&response_type=code` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}`
+
+  window.location.href = url
+}
+
 
 const features = [
   {
