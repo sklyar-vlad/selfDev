@@ -17,7 +17,7 @@ import (
 	authHand "github.com/sklyar-vlad/selfDev/internal/handler/auth"
 	habitHand "github.com/sklyar-vlad/selfDev/internal/handler/habit"
 	userHand "github.com/sklyar-vlad/selfDev/internal/handler/user"
-	emailAdapt "github.com/sklyar-vlad/selfDev/internal/integrations/resend"
+	authAdapt "github.com/sklyar-vlad/selfDev/internal/integrations/casdoor"
 	authRepo "github.com/sklyar-vlad/selfDev/internal/repository/auth"
 	habitRepo "github.com/sklyar-vlad/selfDev/internal/repository/habit"
 	userRepo "github.com/sklyar-vlad/selfDev/internal/repository/user"
@@ -59,14 +59,13 @@ func main() {
 		_ = redis.Close()
 	}()
 
-	authRepository := authRepo.NewRepository(pool, redis, logger)
 	userRepository := userRepo.NewRepository(pool, logger)
 	habitRepository := habitRepo.NewRepository(pool, logger)
 
-	emailAdapter := emailAdapt.NewAdapter(cfg.EmailSender, logger)
+	authAdapter := authAdapt.NewAdapter(cfg.Auth)
 
 	userService := userSrv.NewService(userRepository, logger)
-	authService := authSrv.NewService(authRepository, userService, emailAdapter, cfg.JWT, logger)
+	authService := authSrv.NewService(userService, authAdapter, cfg.JWT, logger)
 	habitService := habitSrv.NewService(habitRepository, userService, logger)
 
 	authHandler := authHand.NewHandler(authService, logger)

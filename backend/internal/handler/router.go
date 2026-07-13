@@ -5,12 +5,7 @@ import (
 )
 
 type AuthHandler interface {
-	Login(w http.ResponseWriter, r *http.Request)
-	Logout(w http.ResponseWriter, r *http.Request)
-	Refresh(w http.ResponseWriter, r *http.Request)
-	Register(w http.ResponseWriter, r *http.Request)
-	ConfirmEmail(w http.ResponseWriter, r *http.Request)
-	Me(w http.ResponseWriter, r *http.Request)
+	Callback(w http.ResponseWriter, r *http.Request)
 }
 
 // TODO: GetUsers(w http.ResponseWriter, r *http.Request)
@@ -36,15 +31,10 @@ type HabitHandler interface {
 // TODO: mux.HandleFunc("DELETE /api/users/{id}", userHandler.DeleteUser)
 // TODO: mux.HandleFunc("PATCH /api/habit/{id}", habitHandler.UpdateHabit)
 func RegisterRoutes(mux *http.ServeMux, userHandler UserHandler, authHandler AuthHandler, habitHandler HabitHandler) {
+	mux.HandleFunc("POST /api/auth/callback", authHandler.Auth)
+
 	mux.HandleFunc("POST /api/users", userHandler.CreateUser)
 	mux.HandleFunc("GET /api/users/{id}", userHandler.GetUser)
-
-	mux.HandleFunc("GET /api/auth/me", authHandler.Me)
-	mux.HandleFunc("POST /api/login", authHandler.Login)
-	mux.HandleFunc("POST /api/logout", authHandler.Logout)
-	mux.HandleFunc("POST /api/refresh", authHandler.Refresh)
-	mux.HandleFunc("POST /api/register", authHandler.Register)
-	mux.HandleFunc("POST /api/verify/{token}", authHandler.ConfirmEmail)
 
 	mux.HandleFunc("GET /api/habit/{user_id}", habitHandler.GetHabits)
 	mux.HandleFunc("POST /api/habit", habitHandler.CreateHabit)
