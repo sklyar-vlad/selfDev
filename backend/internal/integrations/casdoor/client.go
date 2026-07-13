@@ -13,7 +13,7 @@ type client struct {
 
 func newClient(id, secret string) *client {
 	return &client{
-		casdoor: casdoorsdk.NewClient("endpoint",id,secret,"certificate","my-org","my-app"),
+		casdoor: casdoorsdk.NewClient("endpoint", id, secret, "certificate", "my-org", "my-app"),
 	}
 }
 
@@ -22,35 +22,35 @@ func (c *client) getAccess(code, state string) (string, error) {
 	return token.AccessToken, err
 }
 
-func (c *client) getUserInfo(token string) (User, error) {
+func (c *client) getUserInfo(token string) (AuthUser, error) {
 	request, err := http.NewRequest(
-		"GET", 
+		"GET",
 		"http://auth.self-dev.test/api/userinfo",
 		nil,
 	)
 
 	if err != nil {
-		return User{}, err
+		return AuthUser{}, err
 	}
-	
+
 	request.Header.Set(
-		"Authorization", 
+		"Authorization",
 		"Bearer "+token,
 	)
 
 	response, err := http.DefaultClient.Do(request)
 
 	if err != nil {
-		return User{}, err
+		return AuthUser{}, err
 	}
 	defer response.Body.Close()
 
-	var user User
+	var user AuthUser
 
 	err = json.NewDecoder(response.Body).Decode(&user)
 
 	if err != nil {
-		return User{}, err
+		return AuthUser{}, err
 	}
 
 	return user, nil

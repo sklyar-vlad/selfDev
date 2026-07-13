@@ -5,14 +5,17 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/google/uuid"
+	auth "github.com/sklyar-vlad/selfDev/internal/integrations/casdoor"
 	model "github.com/sklyar-vlad/selfDev/internal/model/user"
 	"go.uber.org/zap"
 )
 
 type AuthService interface {
 	Auth(code, state string) (string, error)
-	UserInfo(sub string) (string, error)
-	FindOrCreate(context context.Context, userSub string) (model.User, error)
+	GetUserInfo(sub string) (auth.AuthUser, error)
+	FindOrCreate(ctx context.Context, user auth.AuthUser) (model.User, error)
+	CreateSession(ctx context.Context, userId uuid.UUID) (string, error)
 }
 
 type handler struct {
@@ -46,35 +49,17 @@ func (h *handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userSub, err := h.service.UserInfo(accessToken)
-
-	user, err := h.service.FindOrCreate(r.Context(), userSub)
-
+	authUser, err := h.service.GetUserInfo(accessToken)
+	user, err := h.service.FindOrCreate(r.Context(), authUser)
+	sessionID, err := h.service.CreateSession(r.Context(), user.UserId)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    accessToken,
+		Name:     "session",
+		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   12 * 60 * 60,
+		MaxAge:   30 * 24 * 3600,
 	})
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   30 * 24 * 60 * 60,
-	})
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-
-	if err = json.NewEncoder(w).Encode(ToAuthResponse(&user)); err != nil {
-		h.logger.Error("failed create response", zap.String("email", input.Email), zap.Error(err))
-	}
 }

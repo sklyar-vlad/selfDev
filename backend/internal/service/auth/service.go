@@ -2,52 +2,83 @@ package auth
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
-	"fmt"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/sklyar-vlad/selfDev/internal/config"
 	appErrors "github.com/sklyar-vlad/selfDev/internal/errors"
-	userModel "github.com/sklyar-vlad/selfDev/internal/model/user"
+	auth "github.com/sklyar-vlad/selfDev/internal/integrations/casdoor"
+	"github.com/sklyar-vlad/selfDev/internal/model/user"
+	"go.uber.org/zap"
 )
 
 type UserService interface {
-	CreateUser(ctx context.Context, username, email, password string) (userModel.User, error)
-	GetById(ctx context.Context, id uuid.UUID) (userModel.User, error)
+	GetUserByID(ctx context.Context, userSub string) (model.User, error)
+	CreateUser(ctx context.Context, user model.User) (model.User, error)
 }
 
 type AuthAdapter interface {
-	GetToken(code, state string) (string, error)
-	GetUserSub(token string) (string, error)
+	GetAccess(code, state string) (string, error)
+	GetUserInfo(token string) (auth.AuthUser, error)
+}
+
+type AuthRepository interface {
+	CreateSession(ctx context.Context, sessionID string, userID uuid.UUID) error
 }
 
 type Service struct {
-	userService  UserService
-	authAdapter  AuthAdapter
-	cfg          config.ConfigJWT
-	logger       *zap.Logger
+	userService UserService
+	authAdapter AuthAdapter
+	repo        AuthRepository
+	cfg         config.ConfigJWT
+	logger      *zap.Logger
 }
 
 func NewService(
 	userService UserService,
 	authAdapter AuthAdapter,
+	repo AuthRepository,
 	configJwt config.ConfigJWT,
 	logger *zap.Logger,
 ) *Service {
-	return &Service{userService: userService, authAdapter: authAdapter, cfg: configJwt, logger: logger}
+	return &Service{userService: userService, authAdapter: authAdapter, repo: repo, cfg: configJwt, logger: logger}
 }
 
 func (s *Service) Auth(code, state string) (string, error) {
-	return s.authAdapter.GetToken(code, state)
+	return s.authAdapter.GetAccess(code, state)
 }
 
-func (s *Service) GetUserInfo(token string) (string, error) {
-	return s.authAdapter.GetUserSub(token)
+func (s *Service) GetUserInfo(token string) (auth.AuthUser, error) {
+	return s.authAdapter.GetUserInfo(token)
+}
+
+func (s *Service) FindOrCreate(ctx context.Context, authUser auth.AuthUser) (model.User, error) {
+	user, err := s.userService.GetUserByID(ctx, authUser.Sub)
+
+	if err != nil {
+		return model.User{}, err
+	}
+
+	if errors.Is(err, appErrors.ErrUserNotFound) {
+		user, err = s.userService.CreateUser(ctx, model.NewUser(authUser.Sub, authUser.Name, authUser.Email))
+
+		if err != nil {
+			return model.User{}, err
+		}
+
+	}
+
+	return user, nil
+}
+
+func (s *Service) CreateSession(ctx context.Context, userID uuid.UUID) (string, error) {
+	sessionID := uuid.NewString()
+
+	err := s.repo.CreateSession(ctx, sessionID, userID)
+
+	if err != nil {
+		return "", err
+	}
+
+	return sessionID, nil
 }

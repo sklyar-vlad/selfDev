@@ -15,14 +15,14 @@ import (
 	"github.com/sklyar-vlad/selfDev/internal/config"
 	"github.com/sklyar-vlad/selfDev/internal/handler"
 	authHand "github.com/sklyar-vlad/selfDev/internal/handler/auth"
-	habitHand "github.com/sklyar-vlad/selfDev/internal/handler/habit"
-	userHand "github.com/sklyar-vlad/selfDev/internal/handler/user"
+	// habitHand "github.com/sklyar-vlad/selfDev/internal/handler/habit"
+	// userHand "github.com/sklyar-vlad/selfDev/internal/handler/user"
 	authAdapt "github.com/sklyar-vlad/selfDev/internal/integrations/casdoor"
 	authRepo "github.com/sklyar-vlad/selfDev/internal/repository/auth"
-	habitRepo "github.com/sklyar-vlad/selfDev/internal/repository/habit"
+	// habitRepo "github.com/sklyar-vlad/selfDev/internal/repository/habit"
 	userRepo "github.com/sklyar-vlad/selfDev/internal/repository/user"
 	authSrv "github.com/sklyar-vlad/selfDev/internal/service/auth"
-	habitSrv "github.com/sklyar-vlad/selfDev/internal/service/habit"
+	// habitSrv "github.com/sklyar-vlad/selfDev/internal/service/habit"
 	userSrv "github.com/sklyar-vlad/selfDev/internal/service/user"
 	customLogger "github.com/sklyar-vlad/selfDev/logger"
 	"github.com/sklyar-vlad/selfDev/middleware"
@@ -60,20 +60,21 @@ func main() {
 	}()
 
 	userRepository := userRepo.NewRepository(pool, logger)
-	habitRepository := habitRepo.NewRepository(pool, logger)
+	// habitRepository := habitRepo.NewRepository(pool, logger)
+	authRepository := authRepo.NewRepository(pool, redis, logger)
 
 	authAdapter := authAdapt.NewAdapter(cfg.Auth)
 
 	userService := userSrv.NewService(userRepository, logger)
-	authService := authSrv.NewService(userService, authAdapter, cfg.JWT, logger)
-	habitService := habitSrv.NewService(habitRepository, userService, logger)
+	authService := authSrv.NewService(userService, authAdapter, authRepository, cfg.JWT, logger)
+	// habitService := habitSrv.NewService(habitRepository, userService, logger)
 
 	authHandler := authHand.NewHandler(authService, logger)
-	userHandler := userHand.NewHandler(userService, logger)
-	habitHandler := habitHand.NewHandler(habitService, logger)
+	// userHandler := userHand.NewHandler(userService, logger)
+	// habitHandler := habitHand.NewHandler(habitService, logger)
 
 	mux := http.NewServeMux()
-	handler.RegisterRoutes(mux, userHandler, authHandler, habitHandler)
+	handler.RegisterRoutes(mux, authHandler)
 	wrapped := middleware.CORS(mux, cfg.Server.Middleware)
 
 	service := &http.Server{

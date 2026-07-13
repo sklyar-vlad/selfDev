@@ -18,6 +18,6 @@ func (a *adapter) GetAccess(code, state string) (string, error) {
 	return a.client.getAccess(code, state)
 }
 
-func (a *adapter) GetUserInfo(token string) (User, error) {
+func (a *adapter) GetUserInfo(token string) (AuthUser, error) {
 	return a.client.getUserInfo(token)
 }
